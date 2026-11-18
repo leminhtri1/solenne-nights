@@ -71,6 +71,10 @@ export class Game {
     this.camera = new THREE.PerspectiveCamera(62, 16 / 10, 0.3, 2600);
     this.post = new PostEffects(this.renderer);
     this.input = new InputControls(canvas);
+    // Chrome swallows the first Esc to release pointer lock, so losing the lock pauses the game
+    document.addEventListener('pointerlockchange', () => {
+      if (!document.pointerLockElement && this.running && !this.paused && !this.shotMode) this.setPaused(true);
+    });
     addEventListener('resize', () => this.resize());
     this.resize();
   }
@@ -260,20 +264,32 @@ export class Game {
     this.teleportPlayer(x, z - 3, Math.PI);
   }
 
-  /** Handle menu-level keys while playing. */
-  handleGlobalKeys() {
+  openMap(on) {
+    this.mapScreen.toggle(on);
+    this.paused = on;
+    if (on) this.input.releasePointer();
+  }
+
+  /** Esc / P / M: pause menu, map and shop screens. Returns true when a key was used. */
+  handleMenuKeys() {
     const input = this.input;
-    if (input.pressed('Escape')) {
-      if (this.mapScreen.open) this.mapScreen.toggle(false);
+    if (input.pressed('Escape') || input.pressed('KeyP')) {
+      if (this.mapScreen.open) this.openMap(false);
       else if (this.shop.open) this.shop.close();
       else this.setPaused(!this.paused);
+      return true;
     }
-    if (input.pressed('KeyM') && !this.shop.open) {
-      this.mapScreen.toggle();
-      this.paused = this.mapScreen.open;
-      if (this.paused) this.input.releasePointer();
+    if (input.pressed('KeyM') && !this.shop.open && (this.mapScreen.open || !this.paused)) {
+      this.openMap(!this.mapScreen.open);
+      return true;
     }
-    if (this.paused) return;
+    return false;
+  }
+
+  /** Handle menu-level and context keys while playing. */
+  handleGlobalKeys() {
+    const input = this.input;
+    if (this.handleMenuKeys() || this.paused) return;
     if (input.pressed('KeyR') && this.player.vehicle) this.audio.radio?.nextStation();
     const shop = this.shop.nearbyShop();
     const p = this.player;
@@ -335,7 +351,7 @@ export class Game {
       if (steps === 4) this.accumulator = 0;
       this.audio.update(dt);
     } else if (this.running && this.paused) {
-      if (this.input.pressed('Escape') || this.input.pressed('KeyM')) this.handleGlobalKeys();
+      this.handleMenuKeys();
     } else {
       this.titleCamera(dt);
     }
@@ -353,6 +369,8 @@ export class Game {
   }
 
   render(dt) {
+    this.renderer.info.autoReset = false;
+    this.renderer.info.reset();
     this.updateAtmosphere();
     if (this.running) {
       this.cameraRig.cinematic = this.cinematicOverride ?? null;

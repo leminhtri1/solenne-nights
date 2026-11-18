@@ -1,12 +1,24 @@
 // Gunfire and fists. A shot is a hitscan ray (several for the shotgun) tested against walls,
 // people (as upright cylinders) and vehicles; the nearest hit takes the damage. Every shot is
 // announced as a 'gunshot' event, which scatters pedestrians and tells the police.
+import * as THREE from 'three';
 import { WEAPONS } from './weaponCatalog.js';
 
 export class CombatSystem {
   constructor(game) {
     this.game = game;
     this.tracers = [];
+    // tracer streaks: one additive line-segment buffer refilled every frame
+    this.maxTracers = 64;
+    this.tracerPos = new Float32Array(this.maxTracers * 6);
+    this.tracerCol = new Float32Array(this.maxTracers * 6);
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(this.tracerPos, 3).setUsage(THREE.DynamicDrawUsage));
+    geo.setAttribute('color', new THREE.BufferAttribute(this.tracerCol, 3).setUsage(THREE.DynamicDrawUsage));
+    this.tracerLines = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+    this.tracerLines.frustumCulled = false;
+    this.tracerLines.renderOrder = 8;
+    game.scene.add(this.tracerLines);
   }
 
   /** All people that can be hit, as { fig, takeHit(dmg, source, dir) } entries. */
@@ -94,19 +106,27 @@ export class CombatSystem {
     }
   }
 
-  /** Bright streaks for the shots fired this frame. */
+  /** Bright streaks for recent shots: a hot head near the target fading to a dim tail. */
   update(dt) {
     const glow = this.game.dynamicGlow;
+    let n = 0;
     for (let i = this.tracers.length - 1; i >= 0; i -= 1) {
       const t = this.tracers[i];
       t.life -= dt;
       if (t.life <= 0) { this.tracers.splice(i, 1); continue; }
-      const steps = 6;
-      for (let k = 1; k <= steps; k += 1) {
-        const f = k / (steps + 1);
-        glow.push(t.ax + (t.bx - t.ax) * f, t.ay + (t.by - t.ay) * f, t.az + (t.bz - t.az) * f, 0xffd08a, 0.5, 0, 1.2);
-      }
+      if (n >= this.maxTracers) continue;
+      const k = n * 6;
+      const tail = 0.35;
+      this.tracerPos.set([t.ax + (t.bx - t.ax) * tail, t.ay + (t.by - t.ay) * tail, t.az + (t.bz - t.az) * tail, t.bx, t.by, t.bz], k);
+      const a = Math.min(1, t.life / 0.06);
+      this.tracerCol.set([0.6 * a, 0.35 * a, 0.1 * a, 3 * a, 2.4 * a, 1.2 * a], k);
+      glow.push(t.bx, t.by, t.bz, 0xffc070, 0.9, 0, a);
+      n += 1;
     }
+    const geo = this.tracerLines.geometry;
+    geo.setDrawRange(0, n * 2);
+    geo.attributes.position.needsUpdate = true;
+    geo.attributes.color.needsUpdate = true;
   }
 }
 

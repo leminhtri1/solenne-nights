@@ -59,7 +59,7 @@ export class CameraRig {
       if (this.orbitIdle > 1.4) this.pitch += (0.2 - this.pitch) * damp(2, dt);
       this.mode = 'vehicle';
       const size = def.kind === 'bike' ? 0.75 : def.body === 'van' ? 1.25 : def.kind === 'boat' ? 1.35 : 1;
-      const dist = (7.2 + Math.min(speed, 50) * 0.045) * size;
+      const dist = (7.0 + Math.min(speed, 50) * 0.028) * size;
       const height = 2.5 * size + this.pitch * 6;
       desired = new THREE.Vector3(b.x + Math.sin(this.yaw) * dist, b.y + height, b.z + Math.cos(this.yaw) * dist);
       const lead = Math.min(speed, 40) * 0.12;
@@ -68,8 +68,8 @@ export class CameraRig {
     } else {
       this.mode = target.aiming ? 'aim' : 'foot';
       const aiming = target.aiming;
-      const dist = aiming ? 2.7 : 4.6;
-      const shoulder = aiming ? 0.75 : 0.55;
+      const dist = aiming ? 3.5 : 4.6;
+      const shoulder = aiming ? 0.95 : 0.6;
       const rx = -Math.cos(this.yaw), rz = Math.sin(this.yaw);
       const p = target.position;
       const pitch = this.pitch;
@@ -79,7 +79,7 @@ export class CameraRig {
         p.z + Math.cos(this.yaw) * dist * Math.cos(pitch) - rz * shoulder,
       );
       lookAt = new THREE.Vector3(p.x - Math.sin(this.yaw) * 6 - rx * shoulder, p.y + 1.55 - pitch * 3, p.z - Math.cos(this.yaw) * 6 - rz * shoulder);
-      fov = aiming ? 48 : 62;
+      fov = aiming ? 52 : 62;
     }
     // keep the camera out of walls
     const from = target.vehicle ? target.vehicle.body : target.position;

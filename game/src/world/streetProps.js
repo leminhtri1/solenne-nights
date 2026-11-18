@@ -17,6 +17,7 @@ export class StreetProps {
     this.posts = new MeshBuilder();
     this.pools = new MeshBuilder();
     this.signs = [];
+    this.blades = [];
     this.billboards = [];
     this.frond = new THREE.PlaneGeometry(1, 1, 1, 4);
     this.poolPlane = new THREE.PlaneGeometry(1, 1);
@@ -99,14 +100,33 @@ export class StreetProps {
     this.glow.push(x + Math.sin(yaw) * 1.2, baseY + h + 0.6, z + Math.cos(yaw) * 1.2, 0xfff0d0, 5, 1, 0.6);
   }
 
-  /** A neon sign flat on a facade at (x, y, z), facing `yaw`. */
-  neon(x, y, z, yaw, text, color, width = 9) {
+  /** A neon sign flat on a facade at (x, y, z), facing `yaw`, with its glow on the wet street. */
+  neon(x, y, z, yaw, text, color, width = 9, reflect = true) {
     this.signs.push({ x, y, z, yaw, text, color, width });
     const fx = Math.sin(yaw), fz = Math.cos(yaw);
     const rx = Math.cos(yaw), rz = -Math.sin(yaw);
     for (const s of [-0.35, 0, 0.35]) {
       this.glow.push(x + fx * 0.8 + rx * s * width, y, z + fz * 0.8 + rz * s * width, color, width * 0.9, 1, 0.55);
     }
+    if (reflect) this.streetGlow(x + fx * 7, z + fz * 7, yaw, width * 1.1, 13, color);
+  }
+
+  /** A vertical blade sign sticking out of a facade, readable down the street. */
+  blade(x, y, z, yaw, text, color, length = 7) {
+    this.blades.push({ x, y, z, yaw, text, color, length });
+    const fx = Math.sin(yaw), fz = Math.cos(yaw);
+    this.posts.addBox(x - fx * 0.2, y, z - fz * 0.2, Math.abs(fz) * 0.15 + Math.abs(fx) * 0.5, length + 0.4, Math.abs(fx) * 0.15 + Math.abs(fz) * 0.5, 0x1a1a22);
+    for (const s of [-0.3, 0, 0.3]) this.glow.push(x + fx * 1.4, y + s * length, z + fz * 1.4, color, 5, 1, 0.6);
+    this.streetGlow(x + fx * 6, z + fz * 6, yaw, 4, 9, color);
+  }
+
+  /** A soft coloured smear of light on the asphalt, stretched away from its source. */
+  streetGlow(x, z, yaw, width, length, color) {
+    const m = new THREE.Matrix4().makeTranslation(x, 0.07, z)
+      .multiply(new THREE.Matrix4().makeRotationY(yaw))
+      .multiply(new THREE.Matrix4().makeRotationX(-Math.PI / 2))
+      .multiply(new THREE.Matrix4().makeScale(width, length, 1));
+    this.pools.addGeometry(this.poolPlane, m, color);
   }
 
   /** Turn everything collected into meshes. Returns the group plus materials that react to night. */
@@ -145,13 +165,25 @@ export class StreetProps {
       group.add(mesh);
       (this.neonMaterials ||= []).push(mesh.material);
     }
+    for (const s of this.blades) {
+      // two single-sided faces back to back, so the lettering reads correctly from both ends of the street
+      const material = new THREE.MeshBasicMaterial({ map: neonSignTexture(s.text, s.color), transparent: true, toneMapped: false });
+      for (const flip of [0, Math.PI]) {
+        const mesh = new THREE.Mesh(plane, material);
+        mesh.scale.set(s.length, s.length / 4, 1);
+        mesh.position.set(s.x + Math.sin(s.yaw) * 1.4, s.y, s.z + Math.cos(s.yaw) * 1.4);
+        mesh.rotation.set(0, s.yaw + Math.PI / 2 + flip, Math.PI / 2, 'YXZ');
+        group.add(mesh);
+      }
+      (this.neonMaterials ||= []).push(material);
+    }
     return group;
   }
 
   /** Night factor 0..1: light pools and billboard lamps come up after dusk. */
   setNight(night) {
-    if (this.poolMaterial) this.poolMaterial.opacity = 0.55 * night;
+    if (this.poolMaterial) this.poolMaterial.opacity = 0.6 * night;
     for (const m of this.billboardMaterials || []) m.emissiveIntensity = 0.55 * night;
-    for (const m of this.neonMaterials || []) m.color.setScalar(0.75 + 0.6 * night);
+    for (const m of this.neonMaterials || []) m.color.setScalar(0.8 + 0.9 * night);
   }
 }

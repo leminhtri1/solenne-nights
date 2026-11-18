@@ -244,11 +244,24 @@ export class PoliceDispatch {
     }
     let tx, tz;
     const seen = dist < 75 && g.collision.lineOfSight(b.x, 1.5, b.z, p.x, 1.5, p.z);
+    let catchUp = 0;
     if (seen) {
       const pv = p.vehicle?.body;
       const lead = pv ? Math.min(1.2, dist / 30) : 0;
       tx = p.x + (pv ? pv.vx * lead : 0);
       tz = p.z + (pv ? pv.vz * lead : 0);
+      if (pv && dist < 45 && this.wanted >= 2) {
+        // pull alongside on this unit's side, then swing in for a side ram (PIT)
+        const side = v.id % 2 ? 1 : -1;
+        const ram = dist < 8;
+        const off = ram ? 0.6 : 3.6;
+        const ahead = ram ? 1.5 : 4;
+        tx = p.x - Math.cos(pv.heading) * side * off + Math.sin(pv.heading) * ahead;
+        tz = p.z + Math.sin(pv.heading) * side * off + Math.cos(pv.heading) * ahead;
+        // match the player's speed, closing the gap along their direction of travel
+        const along = (tx - b.x) * Math.sin(pv.heading) + (tz - b.z) * Math.cos(pv.heading);
+        catchUp = Math.max(4, pv.speed + clamp(along * 0.9, -12, 10));
+      }
       u.status = dist < 22 && this.wanted >= 2 ? 'RAMMING' : 'PURSUIT';
     } else {
       u.routeTimer -= dt;
@@ -278,7 +291,8 @@ export class PoliceDispatch {
     }
     v.input.steer = clamp(-diff * 2.6, -1, 1);
     const top = v.def.maxSpeed * (0.7 + this.wanted * 0.06);
-    const target = Math.abs(diff) > 1.2 ? 9 : Math.abs(diff) > 0.5 ? top * 0.55 : top;
+    let target = Math.abs(diff) > 1.2 ? 9 : Math.abs(diff) > 0.5 ? top * 0.55 : top;
+    if (catchUp) target = Math.min(v.def.maxSpeed, catchUp);
     v.input.throttle = clamp((target - speed) * 0.4, -1, 1);
     v.input.handbrake = Math.abs(diff) > 1.3 && speed > 12;
     if (Math.abs(speed) < 1.2 && v.input.throttle > 0.3) u.stuck += dt; else u.stuck = Math.max(0, u.stuck - dt);

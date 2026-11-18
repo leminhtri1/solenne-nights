@@ -16,6 +16,7 @@ const STEP = 1 / 60;
 function setup(game, hour) {
   game.state.hour = hour;
   game.freezeClock = true;
+  game.godMode = true;
   game.running = true;
   game.hud.show(true);
   game.menus.hideTitle();
@@ -84,8 +85,8 @@ const SCENES = {
     game.missions.cpIndex = 0;
     game.missions.timer = 31;
     game.police.setWanted(3);
-    addUnit(game, 'patrol', 292, -303.5, Math.PI / 2 + 0.04, 38);
-    addUnit(game, 'patrol', 289, -289.5, Math.PI / 2 - 0.05, 38);
+    addUnit(game, 'patrol', 299, -302.5, Math.PI / 2 + 0.03, 39);
+    addUnit(game, 'patrol', 297, -289.5, Math.PI / 2 - 0.04, 39);
     addUnit(game, 'patrol', 250, -303, Math.PI / 2, 38);
     addUnit(game, 'swat', 225, -297, Math.PI / 2, 34);
     game.police.heli.activate(game.player.x, game.player.z);
@@ -96,6 +97,21 @@ const SCENES = {
     game.police.placeRoadblock();
     simulate(game, 0.5, 0.5);
     game.autopilot = null;
+    // the two flanking units are pulled alongside for the frame (their AI keeps them there in play)
+    const pb = game.player.vehicle.body;
+    const flank = game.police.units.filter((u) => u.kind === 'patrol').slice(0, 2);
+    flank.forEach((u, k) => {
+      const b = u.vehicle.body;
+      b.x = pb.x - (k ? 7.5 : 2.5); b.z = k ? -289.6 : -302.6; b.heading = pb.heading + (k ? -0.06 : 0.07);
+      b.setVelocityForward(pb.speed);
+      u.status = k ? 'PURSUIT' : 'RAMMING';
+      game.vehicles.syncMesh(u.vehicle);
+    });
+    const heli = game.police.heli;
+    heli.x = game.player.x + 62; heli.z = game.player.z - 14; heli.y = 27;
+    heli.heading = Math.atan2(game.player.x - heli.x, game.player.z - heli.z);
+    heli.aim.set(game.player.x + 4, 0, game.player.z);
+    heli.update(0, { x: game.player.x, z: game.player.z });
     game.dialogue.pin('juno', 'Cops on the causeway! Stay on the gas, the lighthouse is past the bridge!', game.cast);
     game.audio.radio = { nowPlaying: { station: 'SOLAR FM 101.3', title: 'Causeway Lights', artist: 'VHS Lagoon', art: 'linear-gradient(135deg,#ff4fa3,#ffb347)' } };
     game.cameraRig.shake = 0;
@@ -119,27 +135,22 @@ const SCENES = {
     game.dialogue.stopIfFrom();
     game.missions.advance(); game.missions.advance(); game.missions.advance();
     const h = game.missions.hostiles.active;
-    const spots = [[-404, -248], [-396, -255], [-409, -262], [-392, -238]];
+    const spots = [[-405, -233], [-397, -237], [-408, -241], [-394, -229]];
     h.forEach((a, k) => { if (spots[k]) { a.fig.x = spots[k][0]; a.fig.z = spots[k][1]; a.post = { x: spots[k][0], z: spots[k][1] }; a.alerted = true; } });
     if (h[2]) h[2].takeHit(500, 'player');
     if (h[3]) h[3].takeHit(500, 'player');
     game.police.setWanted(2);
-    const u = addUnit(game, 'patrol', -397, -285, 0.1, 6);
+    const u = addUnit(game, 'patrol', -396, -258, 0.35, 4);
     u.status = 'ON FOOT';
     u.deployed = true;
     game.police.deployOfficers(u, 2);
-    addUnit(game, 'patrol', -380, -300, -Math.PI / 2, 14);
-    game.peds.scare(-402, -230, 60, false);
-    game.player.aiming = true;
+    addUnit(game, 'patrol', -404, -275, 0.05, 12);
+    game.peds.scare(-402, -225, 60, false);
     const p = game.player;
-    game.cameraRig.yaw = 0.06;
-    game.cameraRig.pitch = 0.16;
-    simulate(game, 1.2);
-    p.figure.yaw = Math.PI + 0.06;
-    p.figure.aim = true;
-    game.player.aiming = true;
-    game.input.held.add('Mouse2');
     game.input.buttons = 4;
+    game.cameraRig.yaw = 0.05;
+    game.cameraRig.pitch = 0.12;
+    simulate(game, 1.2);
     game.state.ammo.smg = 87;
     for (let k = 0; k < 3; k += 1) { p.fireCooldown = 0; p.fire(); game.step(STEP * 3); }
     p.fireCooldown = 0;

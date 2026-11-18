@@ -21,6 +21,7 @@ function boot() {
   const loop = (now) => {
     const dt = (now - last) / 1000;
     last = now;
+    window.__fps = (window.__fps || 30) * 0.95 + (1 / Math.max(dt, 1e-3)) * 0.05;
     game.frame(dt);
     requestAnimationFrame(loop);
   };

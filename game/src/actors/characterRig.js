@@ -9,9 +9,13 @@ const PARTS = {
   torso: { size: [0.48, 0.62, 0.27], pivot: [0, 0.88, 0], hang: false },
   armL: { size: [0.14, 0.66, 0.14], pivot: [-0.32, 1.46, 0], hang: true },
   armR: { size: [0.14, 0.66, 0.14], pivot: [0.32, 1.46, 0], hang: true },
-  head: { size: [0.26, 0.29, 0.27], pivot: [0, 1.52, 0], hang: false },
-  hair: { size: [0.29, 0.12, 0.3], pivot: [0, 1.75, -0.01], hang: false },
+  head: { size: [0.23, 0.27, 0.25], pivot: [0, 1.53, 0.01], hang: false },
+  hair: { size: [0.25, 0.08, 0.27], pivot: [0, 1.76, -0.005], hang: false },
   gun: { size: [0.08, 0.42, 0.13], pivot: [0.32, 1.46, 0], hang: true, gun: true },
+  handL: { size: [0.12, 0.15, 0.13], pivot: [-0.32, 1.46, 0], drop: 0.66, follow: 'armL' },
+  handR: { size: [0.12, 0.15, 0.13], pivot: [0.32, 1.46, 0], drop: 0.66, follow: 'armR' },
+  shoeL: { size: [0.22, 0.11, 0.33], pivot: [-0.11, 0.9, 0], drop: 0.84, fwd: 0.06, follow: 'legL' },
+  shoeR: { size: [0.22, 0.11, 0.33], pivot: [0.11, 0.9, 0], drop: 0.84, fwd: 0.06, follow: 'legR' },
 };
 
 const tmpM = new THREE.Matrix4();
@@ -30,9 +34,10 @@ export class CharacterRig {
     this.figures = [];
     this.meshes = {};
     for (const [name, part] of Object.entries(PARTS)) {
-      const geo = new THREE.BoxGeometry(...part.size);
+      const geo = partGeometry(name, part.size);
       // hanging parts pivot at their top; standing parts at their bottom
       if (part.gun) geo.translate(0, -0.74, 0.07);
+      else if (part.drop) geo.translate(0, -part.drop - part.size[1] / 2, part.fwd ?? 0);
       else geo.translate(0, part.hang ? -part.size[1] / 2 : part.size[1] / 2, 0);
       const mat = new THREE.MeshStandardMaterial({ roughness: 0.75, metalness: part.gun ? 0.6 : 0 });
       const mesh = new THREE.InstancedMesh(geo, mat, capacity);
@@ -72,6 +77,9 @@ export class CharacterRig {
     set('head', L.skin);
     set('hair', L.hair);
     set('gun', 0x1c1c1f);
+    set('handL', L.skin); set('handR', L.skin);
+    const shoe = L.shoes ?? (L.pants === 0xe0e1dd || L.pants === 0xf2e8cf ? 0xf4f4f4 : 0x1d1d22);
+    set('shoeL', shoe); set('shoeR', shoe);
     for (const mesh of Object.values(this.meshes)) mesh.instanceColor.needsUpdate = true;
   }
 
@@ -119,12 +127,44 @@ export class CharacterRig {
     for (const [name, part] of Object.entries(PARTS)) {
       const mesh = this.meshes[name];
       if (name === 'gun' && !showGun) { mesh.setMatrixAt(fig.slot, hidden); continue; }
-      const [ax, ay, az] = angles[name];
-      partM.compose(v.set(part.pivot[0], part.pivot[1] + (name.startsWith('leg') ? 0 : bob), part.pivot[2]), q.setFromEuler(e.set(ax, ay, az)), one);
+      const [ax, ay, az] = angles[part.follow ?? name];
+      const legLike = name.startsWith('leg') || name.startsWith('shoe');
+      partM.compose(v.set(part.pivot[0], part.pivot[1] + (legLike ? 0 : bob), part.pivot[2]), q.setFromEuler(e.set(ax, ay, az)), one);
       tmpM.multiplyMatrices(rootM, partM);
       mesh.setMatrixAt(fig.slot, tmpM);
     }
   }
+}
+
+/**
+ * Body-part shapes: tapered four-sided frustums for torso and limbs (broad shoulders, narrow
+ * waist and ankles), boxes for the rest, and hair with a back piece.
+ */
+function partGeometry(name, [sx, sy, sz]) {
+  const frustum = (top, bottom, depthScale) => {
+    const g = new THREE.CylinderGeometry(top * Math.SQRT1_2, bottom * Math.SQRT1_2, sy, 4, 1);
+    g.rotateY(Math.PI / 4);
+    g.scale(1, 1, depthScale);
+    return g;
+  };
+  if (name === 'torso') return frustum(sx * 1.02, sx * 0.74, sz / sx);
+  if (name.startsWith('leg')) return frustum(sx * 1.05, sx * 0.72, sz / sx);
+  if (name.startsWith('arm')) return frustum(sx * 1.05, sx * 0.8, 1);
+  if (name === 'hair') {
+    const g = new THREE.BoxGeometry(sx, sy, sz);
+    const back = new THREE.BoxGeometry(sx, sy * 1.8, sz * 0.3);
+    back.translate(0, -sy * 0.9, -sz * 0.4);
+    return mergeTwo(g, back);
+  }
+  return new THREE.BoxGeometry(sx, sy, sz);
+}
+
+function mergeTwo(a, b) {
+  const pos = [...a.toNonIndexed().attributes.position.array, ...b.toNonIndexed().attributes.position.array];
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.computeVertexNormals();
+  return g;
 }
 
 /** Random civilian looks drawn from a coastal-city wardrobe. */

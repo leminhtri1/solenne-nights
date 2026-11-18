@@ -67,7 +67,7 @@ class ParticleCloud {
 
   update(dt) {
     for (let i = 0; i < this.capacity; i += 1) {
-      if (this.life[i] <= 0) { this.alpha[i] = 0; continue; }
+      if (this.life[i] <= 0) { this.alpha[i] = 0; this.size[i] = 0; continue; }
       this.life[i] -= dt;
       const k = i * 3;
       this.v[k + 1] -= this.gravity[i] * dt;

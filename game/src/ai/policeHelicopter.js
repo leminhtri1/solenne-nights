@@ -41,7 +41,7 @@ export class PoliceHelicopter {
     this.group.add(body, this.rotor, this.tail);
 
     // searchlight: spot light, visible cone, ground pool
-    this.spot = new THREE.SpotLight(0xe8f4ff, 0, 150, 0.2, 0.5, 1.2);
+    this.spot = new THREE.SpotLight(0xe8f4ff, 0, 160, 0.2, 0.5, 1.0);
     this.spot.castShadow = false;
     game.scene.add(this.spot, this.spot.target);
     const coneGeo = new THREE.ConeGeometry(1, 1, 24, 1, true);
@@ -115,17 +115,17 @@ export class PoliceHelicopter {
     const lx = this.x + Math.sin(this.heading) * 2.4, ly = this.y - 1.4, lz = this.z + Math.cos(this.heading) * 2.4;
     this.spot.position.set(lx, ly, lz);
     this.spot.target.position.set(this.aim.x, 0, this.aim.z);
-    this.spot.intensity = this.group.visible ? 3000 + night * 9000 : 0;
+    this.spot.intensity = this.group.visible ? 60 + night * 900 : 0;
     const toX = this.aim.x - lx, toY = -ly, toZ = this.aim.z - lz;
     const len = Math.hypot(toX, toY, toZ);
     this.beam.position.set(lx, ly, lz);
     this.beam.lookAt(this.aim.x, 0, this.aim.z);
     const radius = len * Math.tan(0.13);
     this.beam.scale.set(radius, radius, len);
-    this.beam.material.opacity = 0.05 + night * 0.12;
+    this.beam.material.opacity = 0.012 + night * 0.1;
     this.pool.position.set(this.aim.x, 0.15, this.aim.z);
     this.pool.scale.set(radius * 3.2, 1, radius * 3.2);
-    this.pool.material.opacity = 0.25 + night * 0.6;
+    this.pool.material.opacity = 0.12 + night * 0.55;
     this.lamp = { x: lx, y: ly, z: lz };
   }
 

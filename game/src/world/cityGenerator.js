@@ -149,10 +149,16 @@ export class CityGenerator {
         this.building(x, z, sx, sz, h, style, color);
         const [ox, oz] = side.along === 'x' ? [mid, side.out] : [side.out, mid];
         this.shopfront(ox, oz, len - 2, side.yaw, rng.pick([0xc2185b, 0x00838f, 0x6a1b9a, 0xe65100]));
-        if (rng() < 0.8) {
+        const fx = Math.sin(side.yaw), fz = Math.cos(side.yaw);
+        if (rng() < 0.85) {
           const [word, color2] = NEON_WORDS[this.neonIndex++ % NEON_WORDS.length];
-          const fx = Math.sin(side.yaw), fz = Math.cos(side.yaw);
-          this.props.neon(ox + fx * 0.2, 6.5 + rng() * 3, oz + fz * 0.2, side.yaw, word, color2, Math.min(len - 3, 10));
+          this.props.neon(ox + fx * 0.2, 6.5 + rng() * 3, oz + fz * 0.2, side.yaw, word, color2, Math.min(len - 3, 11));
+        }
+        if (h >= 16 && rng() < 0.55) {
+          const [word, color2] = NEON_WORDS[(this.neonIndex + 5) % NEON_WORDS.length];
+          const edge = cursor + 1.2;
+          const [bx, bz] = side.along === 'x' ? [edge, side.out] : [side.out, edge];
+          this.props.blade(bx + fx * 0.2, Math.min(h - 4, 12), bz + fz * 0.2, side.yaw, word, color2, 7);
         }
         cursor += len;
       }

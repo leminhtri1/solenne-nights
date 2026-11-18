@@ -171,8 +171,8 @@ export class VehicleManager {
         const roof = b.y + (v.def.body === 'van' ? 2.5 : 1.7);
         const rz = v.def.body === 'van' ? 1.2 : -0.3;
         const ox = s * rz, oz = c * rz;
-        glow.push(b.x + ox + c * 0.45, roof, b.z + oz - s * 0.45, 0xff1530, phase ? 7 : 2.5, 0, phase ? 1.3 : 0.5);
-        glow.push(b.x + ox - c * 0.45, roof, b.z + oz + s * 0.45, 0x1a50ff, phase ? 2.5 : 7, 0, phase ? 0.5 : 1.3);
+        glow.push(b.x + ox + c * 0.45, roof, b.z + oz - s * 0.45, 0xff1530, phase ? 3.8 : 1.6, 0, phase ? 1.2 : 0.45);
+        glow.push(b.x + ox - c * 0.45, roof, b.z + oz + s * 0.45, 0x1a50ff, phase ? 1.6 : 3.8, 0, phase ? 0.45 : 1.2);
       }
     }
   }

@@ -22,6 +22,7 @@ const PROFILES = {
 };
 
 const cache = new Map();
+const UNIT_GLASS = new THREE.BoxGeometry(1, 1, 1);
 
 function extrude(points, width) {
   const shape = new THREE.Shape(points.map(([z, y]) => new THREE.Vector2(z, y)));
@@ -37,11 +38,27 @@ function addWheels(b, def, r = 0.38, wheelZ = null) {
   const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2);
   for (const z of [wz, -wz]) {
     for (const s of [-1, 1]) {
-      const x = s * (def.width / 2 - 0.12);
-      b.addCylinder(x, r, z, r, r, 0.3, 0x15161a, 12, q);
-      b.addCylinder(x + s * 0.16, r, z, r * 0.55, r * 0.55, 0.02, 0xb8bec6, 8, q);
+      const x = s * (def.width / 2 - 0.08);
+      b.addCylinder(x, r, z, r, r, 0.34, 0x141518, 14, q);
+      b.addCylinder(x + s * 0.175, r, z, r * 0.62, r * 0.62, 0.02, 0xc9ced6, 10, q);
+      b.addCylinder(x + s * 0.185, r, z, r * 0.2, r * 0.2, 0.02, 0x2a2d33, 6, q);
     }
   }
+}
+
+/** Shared details every car body gets: underbody, plates, exhausts, diffuser. */
+function addCarDetails(trim, lights, def, front, rear) {
+  const W = def.width;
+  trim.addBox(0, 0.3, 0, W * 0.86, 0.16, def.length * 0.9, 0x0e0f12);
+  trim.addBox(0, 0.52, rear - 0.07, 0.52, 0.13, 0.03, 0xf2f2ea);
+  trim.addBox(0, 0.52, front + 0.12, 0.52, 0.13, 0.03, 0xf2f2ea);
+  trim.addBox(0, 0.33, rear - 0.02, W * 0.7, 0.1, 0.12, 0x0b0b0d);
+  const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+  for (const s of def.body === 'sports' || def.body === 'muscle' ? [-0.35, -0.22, 0.22, 0.35] : [0.4]) {
+    trim.addCylinder(s * W, 0.34, rear - 0.05, 0.05, 0.05, 0.16, 0x8a8f96, 8, q);
+  }
+  // full-width light bar on the sporty bodies
+  if (def.body === 'sports') lights.addBox(0, 0.76, rear - 0.035, W * 0.8, 0.05, 0.04, 0xff1a1a);
 }
 
 /** Build (or fetch) the shared geometry set for a vehicle definition. */
@@ -65,24 +82,41 @@ export function vehicleGeometry(def) {
     lights.addBox(0, 0.92, 1.03, 0.2, 0.14, 0.05, 0xfff4d6);
     lights.addBox(0, 0.95, -0.76, 0.22, 0.08, 0.05, 0xff2020);
   } else if (def.body === 'boat') {
-    paint.addBox(0, 0.7, -0.3, W, 1.0, def.length * 0.8, 0xffffff);
-    const bow = new THREE.ConeGeometry(W / 2, 2.2, 4, 1);
-    bow.rotateX(Math.PI / 2); bow.rotateZ(Math.PI / 4); bow.scale(1, 0.55, 1);
-    paint.addGeometry(bow, new THREE.Matrix4().makeTranslation(0, 0.85, def.length * 0.4 + 0.5), 0xffffff);
-    trim.addBox(0, 0.32, -0.3, W + 0.02, 0.3, def.length * 0.8, 0x1d3a52);
-    trim.addBox(0, 1.35, 0.2, W * 0.8, 0.5, 0.15, 0x0d1b2a);
-    trim.addBox(0, 1.25, -1.2, W * 0.75, 0.3, 1.6, 0xe9e4d8);
-    trim.addBox(0, 1.3, -def.length * 0.42, 0.6, 0.8, 0.5, 0x222222);
-    lights.addBox(-W / 2, 1.0, 1.8, 0.05, 0.15, 0.15, 0xff2020);
-    lights.addBox(W / 2, 1.0, 1.8, 0.05, 0.15, 0.15, 0x20ff40);
+    // plan-view outline (x, z) with a pointed bow, extruded upward into hull layers
+    const half = W / 2;
+    const plan = (s) => [[-half * s, -3.3], [half * s, -3.3], [half * s, 1.2], [half * 0.55 * s, 2.9], [0, 3.7 * (0.97 + 0.03 * s)], [-half * 0.55 * s, 2.9], [-half * s, 1.2]];
+    const layer = (s, y0, h) => {
+      const shape = new THREE.Shape(plan(s).map(([x, z]) => new THREE.Vector2(x, -z)));
+      const geo = new THREE.ExtrudeGeometry(shape, { depth: h, bevelEnabled: false });
+      geo.rotateX(-Math.PI / 2);
+      geo.translate(0, y0, 0);
+      return geo;
+    };
+    trim.addGeometry(layer(0.9, 0.0, 0.25), I, 0x16283a);
+    trim.addGeometry(layer(1.0, 0.25, 0.45), I, 0xf7f7f2);
+    paint.addGeometry(layer(1.02, 0.7, 0.42), I, 0xffffff);
+    trim.addGeometry(layer(0.9, 1.12, 0.06), I, 0xb07a4a);
+    // raked windscreen, console, seats, outboard motor
+    const rake = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -0.55);
+    const screen = new THREE.Matrix4().compose(new THREE.Vector3(0, 1.55, 0.9), rake, new THREE.Vector3(W * 0.82, 0.75, 0.05));
+    trim.addGeometry(UNIT_GLASS, screen, 0x3d6e8f);
+    trim.addBox(0.35, 1.45, 0.2, 0.7, 0.6, 0.8, 0xe9e4d8);
+    trim.addBox(0.35, 1.8, 0.45, 0.4, 0.15, 0.1, 0x111111);
+    for (const s of [-0.45, 0.45]) trim.addBox(s, 1.42, -0.9, 0.8, 0.45, 0.7, 0xd94848);
+    trim.addBox(0, 1.35, -2.2, W * 0.8, 0.45, 0.9, 0xd94848);
+    trim.addBox(0, 1.4, -3.45, 0.55, 0.9, 0.55, 0x1b1b1f);
+    trim.addBox(0, 0.4, -3.55, 0.25, 0.9, 0.3, 0x2a2a2a);
+    lights.addBox(-half * 0.6, 1.2, 2.6, 0.05, 0.15, 0.15, 0xff2020);
+    lights.addBox(half * 0.6, 1.2, 2.6, 0.05, 0.15, 0.15, 0x20ff40);
+    lights.addBox(0, 2.1, -2.6, 0.1, 0.1, 0.1, 0xffffff);
   } else {
     const prof = PROFILES[def.body];
     paint.addGeometry(extrude(prof.hull, W), I, 0xffffff);
     if (prof.van) {
-      trim.addGeometry(extrude(prof.cabin, W + 0.04), I, 0x152230);
+      trim.addGeometry(extrude(prof.cabin, W + 0.04), I, 0x2b4258);
     } else {
       const gw = W * 0.88;
-      trim.addGeometry(extrude(prof.cabin, gw), I, 0x152230);
+      trim.addGeometry(extrude(prof.cabin, gw), I, 0x2b4258);
       const [, [z1, y1], [z2, y2]] = prof.cabin;
       paint.addBox(0, (y1 + y2) / 2 + 0.035, (z1 + z2) / 2, gw + 0.04, 0.07, Math.abs(z1 - z2) + 0.12, 0xffffff);
       // B-pillars
@@ -97,9 +131,10 @@ export function vehicleGeometry(def) {
     for (const s of [-1, 1]) {
       trim.addBox(s * (W / 2 + 0.01), 0.42, 0, 0.04, 0.12, L * 0.55, 0x22252a);
       trim.addBox(s * (W / 2 + 0.12), def.body === 'van' ? 1.45 : 0.98, prof.cabin[0][0] - 0.15, 0.2, 0.12, 0.12, 0x22252a);
-      lights.addBox(s * W * 0.34, 0.66, front + 0.03, W * 0.2, 0.12, 0.06, 0xfff4d6);
-      lights.addBox(s * W * 0.36, 0.72, rear - 0.03, W * 0.18, 0.12, 0.06, 0xff2020);
+      lights.addBox(s * W * 0.34, 0.66, front + 0.03, W * 0.22, 0.12, 0.06, 0xfff4d6);
+      lights.addBox(s * W * 0.36, 0.72, rear - 0.03, W * 0.22, 0.15, 0.06, 0xff2020);
     }
+    addCarDetails(trim, lights, def, front, rear);
     if (def.body === 'police') {
       trim.addBox(0, 1.52, -0.3, 1.3, 0.1, 0.35, 0x222222);
       lights.addBox(-0.36, 1.62, -0.3, 0.55, 0.16, 0.3, 0xff1a1a);
