@@ -1,0 +1,125 @@
+/* SOLENNE NIGHTS in-game HUD: mission panel, police roster, status column, radio card,
+   minimap with bars, speedometer, dialogue box, banners and prompts. */
+:root {
+  --panel: rgba(12, 10, 28, 0.66);
+  --panel-edge: rgba(255, 255, 255, 0.14);
+  --pink: #ff4fa3;
+  --orange: #ff9a3d;
+  --gold: #ffd166;
+  --cyan: #4fe8ff;
+  --green: #5dff9b;
+  --red: #ff3b5c;
+  --ink: #fff7ec;
+  --dim: rgba(255, 247, 236, 0.66);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #07060f; color: var(--ink); font-family: "Segoe UI", "Trebuchet MS", Arial, sans-serif; user-select: none; }
+#view { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+.hidden { display: none !important; }
+#hud { position: fixed; inset: 0; pointer-events: none; }
+.panel { background: linear-gradient(135deg, rgba(20, 14, 44, 0.78), rgba(10, 8, 24, 0.6)); border: 1px solid var(--panel-edge); border-radius: 12px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35); backdrop-filter: blur(4px); }
+
+/* mission panel */
+#mission-panel { position: absolute; left: 18px; top: 16px; width: 330px; padding: 12px 14px 11px; border-left: 4px solid var(--gold); }
+.mp-chapter { display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; letter-spacing: 2.5px; color: var(--gold); }
+.mp-chapter #mp-stage { color: var(--dim); letter-spacing: 1px; }
+.mp-title { font-size: 23px; font-weight: 900; letter-spacing: 0.5px; margin: 1px 0 5px; text-transform: uppercase; background: linear-gradient(90deg, #fff, #ffd9a0); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.mp-text { font-size: 15px; font-weight: 600; line-height: 1.3; color: #fff; }
+.mp-text::before { content: "▸ "; color: var(--cyan); }
+.mp-bar { height: 7px; margin: 9px 0 7px; background: rgba(255, 255, 255, 0.12); border-radius: 4px; overflow: hidden; }
+#mp-fill { height: 100%; width: 30%; background: linear-gradient(90deg, var(--orange), var(--gold)); box-shadow: 0 0 10px var(--orange); }
+.mp-next { font-size: 12.5px; color: var(--dim); }
+.mp-next .lbl { font-weight: 800; color: var(--pink); letter-spacing: 1.5px; margin-right: 4px; }
+.mp-extra { margin-top: 6px; font-size: 15px; font-weight: 800; color: var(--gold); }
+.mp-extra:empty { display: none; }
+
+/* police roster */
+#police-panel { position: absolute; left: 18px; top: 196px; width: 330px; padding: 9px 12px; border-left: 4px solid var(--red); }
+.pp-head { font-size: 12.5px; font-weight: 900; letter-spacing: 2px; color: #ff8a9c; display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.pp-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--red); box-shadow: 0 0 10px var(--red); animation: blink 0.6s infinite alternate; }
+@keyframes blink { from { opacity: 1; } to { opacity: 0.25; } }
+.pp-row { display: grid; grid-template-columns: 18px 1fr 56px 96px; align-items: center; font-size: 13px; padding: 2.5px 0; border-top: 1px solid rgba(255, 255, 255, 0.07); }
+.pp-row .ico { width: 10px; height: 10px; border-radius: 2px; background: linear-gradient(90deg, #ff2a4a 50%, #2a5bff 50%); }
+.pp-row .ico.air { border-radius: 50%; background: #e8f4ff; box-shadow: 0 0 8px #bfe0ff; }
+.pp-row .cs { font-weight: 800; letter-spacing: 0.5px; }
+.pp-row .dist { color: var(--dim); text-align: right; padding-right: 8px; font-variant-numeric: tabular-nums; }
+.pp-row .st { font-size: 10.5px; font-weight: 900; letter-spacing: 1px; text-align: center; padding: 2px 4px; border-radius: 4px; background: rgba(255, 255, 255, 0.1); }
+.st.RAMMING { background: #ff3b5c; color: #fff; }
+.st.ROADBLOCK { background: #ff9a3d; color: #1a0b00; }
+.st.PURSUIT { background: #2a5bff; color: #fff; }
+.st.SPOTLIGHT { background: #e8f4ff; color: #0b1d3a; }
+.st.ON.FOOT, .st.ON-FOOT { background: #8a5cff; color: #fff; }
+
+/* status column, top right */
+#status-panel { position: absolute; right: 20px; top: 14px; width: 300px; text-align: right; }
+.sp-row { display: flex; justify-content: flex-end; align-items: baseline; gap: 8px; }
+.clock { font-size: 30px; font-weight: 900; letter-spacing: 1px; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6); font-variant-numeric: tabular-nums; }
+.day { font-size: 13px; font-weight: 800; color: var(--gold); letter-spacing: 2px; }
+.cash { font-size: 34px; font-weight: 900; color: #7dffaf; text-shadow: 0 0 14px rgba(93, 255, 155, 0.5), 0 2px 4px #000; font-variant-numeric: tabular-nums; margin-top: -4px; }
+.wanted { font-size: 31px; letter-spacing: 2px; line-height: 1.1; color: rgba(255, 255, 255, 0.18); text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6); }
+.wanted b { color: var(--gold); text-shadow: 0 0 12px #ffb000, 0 2px 4px #000; font-weight: 400; }
+.wanted.flash b { animation: starflash 0.35s infinite alternate; }
+@keyframes starflash { from { color: #fff; } to { color: #ff5d5d; } }
+.sight { display: inline-block; margin-top: 2px; padding: 3px 10px; font-size: 12.5px; font-weight: 900; letter-spacing: 2px; border-radius: 5px; background: var(--red); color: #fff; box-shadow: 0 0 14px rgba(255, 59, 92, 0.7); }
+.sight.search { background: #3a3f5c; box-shadow: none; color: #cfd6ff; }
+.weapons { display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px; }
+.wslot { width: 66px; height: 58px; border-radius: 9px; background: var(--panel); border: 1px solid var(--panel-edge); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; opacity: 0.5; }
+.wslot.owned { opacity: 0.85; }
+.wslot.active { opacity: 1; border-color: var(--gold); box-shadow: 0 0 14px rgba(255, 209, 102, 0.55); background: rgba(40, 26, 10, 0.75); }
+.wslot .key { position: absolute; top: 2px; left: 6px; font-size: 10px; font-weight: 800; color: var(--dim); }
+.wslot .gfx { font-size: 21px; line-height: 1; }
+.wslot .ammo { font-size: 11.5px; font-weight: 800; margin-top: 3px; font-variant-numeric: tabular-nums; }
+.wslot svg { width: 44px; height: 24px; }
+
+/* radio */
+#radio-card { position: absolute; right: 20px; bottom: 236px; width: 292px; padding: 9px; display: flex; gap: 10px; align-items: center; border-right: 4px solid var(--pink); }
+.rc-art { width: 54px; height: 54px; border-radius: 8px; flex: none; background: linear-gradient(135deg, #ff4fa3, #ffb347); box-shadow: 0 0 12px rgba(255, 79, 163, 0.45); position: relative; overflow: hidden; }
+.rc-art::after { content: ""; position: absolute; left: 12px; top: 22px; width: 30px; height: 30px; border-radius: 50%; background: rgba(255, 240, 200, 0.9); box-shadow: 0 0 10px #fff3c4; }
+.rc-info { flex: 1; min-width: 0; text-align: left; }
+.rc-station { font-size: 11px; font-weight: 900; letter-spacing: 2px; color: var(--pink); }
+.rc-track { font-size: 15px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rc-artist { font-size: 12px; color: var(--dim); }
+.rc-eq { display: flex; gap: 3px; height: 12px; align-items: flex-end; margin-top: 3px; }
+.rc-eq i { width: 4px; background: var(--cyan); border-radius: 1px; animation: eq 0.5s infinite alternate; }
+.rc-eq i:nth-child(2n) { animation-delay: 0.2s; } .rc-eq i:nth-child(3n) { animation-delay: 0.35s; }
+@keyframes eq { from { height: 3px; } to { height: 12px; } }
+
+/* minimap, bottom left */
+#minimap-wrap { position: absolute; left: 20px; bottom: 16px; width: 228px; }
+#minimap { width: 220px; height: 220px; border-radius: 50%; display: block; margin-left: 4px; border: 3px solid rgba(255, 255, 255, 0.85); box-shadow: 0 0 0 4px rgba(10, 8, 24, 0.55), 0 8px 24px rgba(0, 0, 0, 0.5); background: #10202c; }
+.district { margin-top: 6px; text-align: center; font-size: 14px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 2px 6px #000, 0 0 10px rgba(0, 0, 0, 0.6); }
+.bars { margin-top: 5px; display: grid; gap: 4px; }
+.bar { height: 8px; border-radius: 4px; background: rgba(0, 0, 0, 0.5); overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.18); position: relative; }
+.bar i { display: block; height: 100%; }
+.bar.health i { background: linear-gradient(90deg, #2bd46a, #7dffaf); }
+.bar.armour i { background: linear-gradient(90deg, #3a86ff, #8ecaff); }
+.bar.respect { height: 13px; }
+.bar.respect i { background: linear-gradient(90deg, #ff4fa3, #ffb347); }
+.bar.respect span { position: absolute; inset: 0; font-size: 9.5px; font-weight: 900; letter-spacing: 1.5px; text-align: center; line-height: 12px; text-transform: uppercase; text-shadow: 0 1px 2px #000; }
+
+/* speedometer, bottom right */
+#speedo { position: absolute; right: 18px; bottom: 12px; width: 220px; text-align: center; }
+#speedo-canvas { width: 200px; height: 200px; display: block; margin: 0 auto -10px; }
+.vehicle-name { font-size: 13px; font-weight: 900; letter-spacing: 2.5px; text-shadow: 0 2px 6px #000; }
+.condition { display: flex; align-items: center; gap: 6px; font-size: 9.5px; font-weight: 800; letter-spacing: 1.5px; color: var(--dim); margin-top: 3px; }
+.cbar { flex: 1; height: 7px; border-radius: 4px; background: rgba(0, 0, 0, 0.5); overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.2); }
+.cbar i { display: block; height: 100%; background: linear-gradient(90deg, #ff3b5c, #ffd166, #5dff9b); background-size: 220px 100%; }
+
+/* dialogue */
+#dialogue { position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); width: 560px; min-height: 92px; display: flex; gap: 12px; align-items: center; padding: 10px 16px 10px 10px; background: linear-gradient(90deg, rgba(12, 8, 30, 0.88), rgba(30, 12, 40, 0.78)); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 14px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+#dlg-portrait { width: 72px; height: 72px; border-radius: 10px; border: 2px solid var(--gold); flex: none; image-rendering: auto; }
+.dlg-name { font-size: 13px; font-weight: 900; letter-spacing: 2px; color: var(--gold); text-transform: uppercase; }
+.dlg-text { font-size: 16.5px; line-height: 1.35; font-weight: 600; margin-top: 2px; }
+
+/* crosshair, prompts, banners */
+#crosshair { position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; transform: translate(-50%, -50%); }
+#crosshair::before, #crosshair::after { content: ""; position: absolute; background: #fff; box-shadow: 0 0 4px #000; }
+#crosshair::before { left: 12px; top: 0; width: 2px; height: 26px; }
+#crosshair::after { top: 12px; left: 0; height: 2px; width: 26px; }
+.prompt { position: absolute; left: 50%; top: 64%; transform: translateX(-50%); padding: 7px 16px; font-size: 15px; font-weight: 700; background: rgba(10, 8, 24, 0.75); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.2); }
+.prompt kbd { display: inline-block; padding: 0 7px; border-radius: 4px; background: #fff; color: #111; font-weight: 900; margin: 0 3px; }
+.toast { position: absolute; left: 50%; top: 18px; transform: translateX(-50%); padding: 8px 18px; font-size: 15px; font-weight: 700; background: rgba(10, 8, 24, 0.8); border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.2); }
+.banner { position: absolute; left: 0; right: 0; top: 34%; text-align: center; }
+#banner-title { font-size: 64px; font-weight: 900; letter-spacing: 6px; font-family: Impact, "Arial Black", sans-serif; color: var(--gold); text-shadow: 0 0 24px rgba(255, 160, 40, 0.8), 0 4px 0 #3a1500; }
+#banner-sub { font-size: 20px; font-weight: 800; letter-spacing: 3px; margin-top: 4px; text-shadow: 0 2px 6px #000; }
+#hit-vignette { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(255, 0, 40, 0.55)); transition: opacity 0.25s; }

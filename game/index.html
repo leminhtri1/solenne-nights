@@ -3,17 +3,134 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Block Dodger</title>
-<style>
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #11141b; }
-  #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
-  /* Read aloud, never shown: the status line screen readers announce. */
-  #status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-</style>
+<title>SOLENNE NIGHTS</title>
+<link rel="stylesheet" href="./styles/hud.css">
+<link rel="stylesheet" href="./styles/menus.css">
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
 </head>
 <body>
-<canvas id="game" aria-label="Block Dodger: move the paddle left and right to dodge falling blocks and catch coins"></canvas>
-<p id="status" role="status" aria-live="polite"></p>
+<canvas id="view" aria-label="SOLENNE NIGHTS game view"></canvas>
+
+<div id="hud" class="hidden">
+  <section id="mission-panel" class="panel">
+    <div class="mp-chapter"><span id="mp-chapter">CHAPTER 1</span><span id="mp-stage"></span></div>
+    <div id="mp-title" class="mp-title">Homecoming</div>
+    <div id="mp-text" class="mp-text"></div>
+    <div class="mp-bar"><div id="mp-fill"></div></div>
+    <div class="mp-next"><span class="lbl">NEXT</span> <span id="mp-next"></span></div>
+    <div id="mp-extra" class="mp-extra"></div>
+  </section>
+
+  <section id="police-panel" class="panel hidden">
+    <div class="pp-head"><span class="pp-dot"></span><span id="pp-title">SPD RESPONSE</span></div>
+    <div id="pp-list"></div>
+  </section>
+
+  <section id="status-panel">
+    <div class="sp-row"><span id="clock" class="clock">18:20</span><span id="day" class="day">FRI</span></div>
+    <div id="cash" class="cash">$1,250</div>
+    <div id="wanted" class="wanted"></div>
+    <div id="sight" class="sight hidden">IN SIGHT</div>
+    <div id="weapons" class="weapons"></div>
+  </section>
+
+  <section id="radio-card" class="panel hidden">
+    <div class="rc-art" id="rc-art"></div>
+    <div class="rc-info">
+      <div id="rc-station" class="rc-station">SOLAR FM 101.3</div>
+      <div id="rc-track" class="rc-track"></div>
+      <div id="rc-artist" class="rc-artist"></div>
+      <div class="rc-eq" id="rc-eq"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    </div>
+  </section>
+
+  <section id="minimap-wrap">
+    <canvas id="minimap" width="440" height="440"></canvas>
+    <div id="district" class="district">Palmera Beach</div>
+    <div class="bars">
+      <div class="bar health"><i id="bar-health"></i></div>
+      <div class="bar armour"><i id="bar-armour"></i></div>
+      <div class="bar respect"><i id="bar-respect"></i><span id="rank-label">Street Runner</span></div>
+    </div>
+  </section>
+
+  <section id="speedo" class="hidden">
+    <canvas id="speedo-canvas" width="400" height="400"></canvas>
+    <div id="vehicle-name" class="vehicle-name">VIREO GT</div>
+    <div class="condition"><span>CONDITION</span><div class="cbar"><i id="condition-fill"></i></div></div>
+  </section>
+
+  <section id="dialogue" class="hidden">
+    <img id="dlg-portrait" alt="">
+    <div class="dlg-body">
+      <div id="dlg-name" class="dlg-name"></div>
+      <div id="dlg-text" class="dlg-text"></div>
+    </div>
+  </section>
+
+  <div id="crosshair" class="hidden"></div>
+  <div id="prompt" class="prompt hidden"></div>
+  <div id="toast" class="toast hidden"></div>
+  <div id="banner" class="banner hidden"><div id="banner-title"></div><div id="banner-sub"></div></div>
+  <div id="hit-vignette"></div>
+</div>
+
+<div id="map-screen" class="screen hidden">
+  <canvas id="map-canvas" width="1200" height="1200"></canvas>
+  <aside class="map-side">
+    <h2>SOLENNE</h2>
+    <div id="map-story"></div>
+    <div id="map-legend"></div>
+    <p class="hint">Click to set a waypoint · M or Esc to close</p>
+  </aside>
+</div>
+
+<div id="pause-menu" class="screen hidden">
+  <div class="menu-box">
+    <div class="menu-logo small"><span>SOLENNE</span><b>NIGHTS</b></div>
+    <div id="pause-stats" class="stats"></div>
+    <div class="menu-buttons" id="pause-buttons"></div>
+  </div>
+</div>
+
+<div id="slot-menu" class="screen hidden">
+  <div class="menu-box wide">
+    <h2 id="slot-title">SAVE GAME</h2>
+    <div id="slot-list" class="slot-list"></div>
+    <div class="menu-buttons"><button data-action="slots-back">Back</button></div>
+  </div>
+</div>
+
+<div id="settings-menu" class="screen hidden">
+  <div class="menu-box wide">
+    <h2>SETTINGS</h2>
+    <div id="settings-list" class="settings-list"></div>
+    <div class="menu-buttons"><button data-action="settings-back">Back</button></div>
+  </div>
+</div>
+
+<div id="shop" class="screen hidden">
+  <div class="menu-box wide shop-box">
+    <h2 id="shop-title">SHOP</h2>
+    <div id="shop-sub" class="shop-sub"></div>
+    <div id="shop-list" class="shop-list"></div>
+    <div class="menu-buttons"><button data-action="shop-close">Leave (Esc)</button></div>
+  </div>
+</div>
+
+<div id="title-screen" class="screen">
+  <div class="title-sun"></div>
+  <div class="title-content">
+    <div class="menu-logo"><span>SOLENNE</span><b>NIGHTS</b></div>
+    <div class="tagline">The bay is for sale. Take it back.</div>
+    <div class="menu-buttons" id="title-buttons"></div>
+    <div class="controls-card" id="controls-card"></div>
+  </div>
+  <div class="title-foot">An original open-world crime game · three.js · all art, music and sound made in code</div>
+</div>
+
+<div id="loading" class="screen"><div class="loading-text">Building Solenne…</div></div>
+
 <script type="module" src="./src/main.js"></script>
 </body>
 </html>
