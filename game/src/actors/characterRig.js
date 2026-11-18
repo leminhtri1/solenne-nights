@@ -101,7 +101,7 @@ export class CharacterRig {
     const fall = dead ? Math.min(1, fig.deathTime * 3) : 0;
     rootM.compose(
       v.set(fig.x, fig.y + (dead ? 0.15 * fall : 0), fig.z),
-      q.setFromEuler(e.set(-fall * Math.PI / 2, fig.yaw, 0, 'YXZ')),
+      q.setFromEuler(e.set(-fall * Math.PI / 2, fig.yaw, fig.roll || 0, 'YXZ')),
       v.clone().set(s, s, s),
     );
     const swingAmt = Math.min(1, fig.speed / 3) * (fig.speed > 5 ? 0.95 : 0.6);
@@ -112,6 +112,11 @@ export class CharacterRig {
       armL: [-swing * 0.8, 0, -0.06], armR: [swing * 0.8, 0, 0.06],
       torso: [fig.speed > 5 ? 0.12 : 0, 0, 0], head: [0, 0, 0], hair: [0, 0, 0], gun: [0, 0, 0],
     };
+    if (fig.state === 'ride') {
+      angles.legL = [-1.35, 0, -0.18]; angles.legR = [-1.35, 0, 0.18];
+      angles.armL = [-1.15, 0, -0.12]; angles.armR = [-1.15, 0, 0.12];
+    }
+    if (fig.state === 'helm') { angles.armL = [-0.95, 0, -0.1]; angles.armR = [-0.95, 0, 0.1]; }
     if (fig.state === 'flee') { angles.armL = [-2.6, 0, -0.3]; angles.armR = [-2.6, 0, 0.3]; }
     if (fig.state === 'cower') { angles.armL = [-2.2, 0, 0.6]; angles.armR = [-2.2, 0, -0.6]; }
     if (fig.aim) {

@@ -139,7 +139,7 @@ function bounce(body, nx, nz, restitution) {
   body.yawRate *= 0.5;
   const speed = -vn;
   if (speed > 6) {
-    body.health = Math.max(0, body.health - (speed - 6) * 2.2 / body.def.mass);
+    if (!body.invulnerable) body.health = Math.max(0, body.health - (speed - 6) * 2.2 / body.def.mass);
     body.lastImpact = speed;
   }
   return speed > 3 ? { speed } : null;
@@ -164,8 +164,8 @@ export function collideVehicles(a, b) {
   b.vx += (j / mb) * nx; b.vz += (j / mb) * nz;
   const speed = -rel;
   if (speed > 5) {
-    a.health = Math.max(0, a.health - speed * 1.2 / ma);
-    b.health = Math.max(0, b.health - speed * 1.2 / mb);
+    if (!a.invulnerable) a.health = Math.max(0, a.health - speed * 1.2 / ma);
+    if (!b.invulnerable) b.health = Math.max(0, b.health - speed * 1.2 / mb);
   }
   return speed;
 }

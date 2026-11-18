@@ -160,7 +160,7 @@ export class Landmarks {
         }
       }
     }
-    for (let x = fromX; x <= toX; x += 22) for (const s of [-1, 1]) this.glow.push(x, 2.2, z + s * (w / 2), 0xbfe8ff, 3.5, 1, 0.8);
+    for (let x = fromX; x <= toX; x += 22) for (const s of [-1, 1]) this.glow.push(x, 2.2, z + s * (w / 2), 0xbfe8ff, 2.2, 1, 0.7);
   }
 
   island() {

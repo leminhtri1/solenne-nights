@@ -198,8 +198,9 @@ export class RoadNetwork {
   /** Wet-look asphalt after dark: smoother, so the sky and neon reflect. */
   setWetness(w) {
     for (const m of [this.roadMaterial, this.junctionMaterial]) {
-      m.roughness = 0.78 - 0.4 * w;
-      m.metalness = 0.5 * w;
+      m.roughness = 0.78 - 0.38 * w;
+      m.metalness = 0.4 * w;
+      m.envMapIntensity = 1 - 0.75 * w;
     }
   }
 }

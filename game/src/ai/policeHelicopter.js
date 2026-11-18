@@ -47,7 +47,15 @@ export class PoliceHelicopter {
     const coneGeo = new THREE.ConeGeometry(1, 1, 24, 1, true);
     coneGeo.translate(0, -0.5, 0);
     coneGeo.rotateX(-Math.PI / 2);
-    this.beam = new THREE.Mesh(coneGeo, new THREE.MeshBasicMaterial({ color: 0xbfdcff, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+    // brightest at the lamp, fading toward the ground
+    const pos = coneGeo.attributes.position;
+    const fade = new Float32Array(pos.count * 3);
+    for (let i = 0; i < pos.count; i += 1) {
+      const k = 1 - 0.85 * Math.min(1, pos.getZ(i));
+      fade[i * 3] = fade[i * 3 + 1] = fade[i * 3 + 2] = k;
+    }
+    coneGeo.setAttribute('color', new THREE.BufferAttribute(fade, 3));
+    this.beam = new THREE.Mesh(coneGeo, new THREE.MeshBasicMaterial({ color: 0xbfdcff, vertexColors: true, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
     this.beam.renderOrder = 8;
     this.pool = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: glowTexture(), color: 0xdcecff, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false }));
     this.pool.renderOrder = 4;
@@ -120,12 +128,13 @@ export class PoliceHelicopter {
     const len = Math.hypot(toX, toY, toZ);
     this.beam.position.set(lx, ly, lz);
     this.beam.lookAt(this.aim.x, 0, this.aim.z);
-    const radius = len * Math.tan(0.13);
+    const radius = Math.min(8, len * Math.tan(0.13));
     this.beam.scale.set(radius, radius, len);
-    this.beam.material.opacity = 0.012 + night * 0.1;
+    const near = Math.max(0, 1 - Math.max(0, len - 90) / 80);
+    this.beam.material.opacity = (0.012 + night * 0.07) * near;
     this.pool.position.set(this.aim.x, 0.15, this.aim.z);
-    this.pool.scale.set(radius * 3.2, 1, radius * 3.2);
-    this.pool.material.opacity = 0.12 + night * 0.55;
+    this.pool.scale.set(radius * 2.6, 1, radius * 2.6);
+    this.pool.material.opacity = (0.12 + night * 0.38) * Math.max(0.3, near);
     this.lamp = { x: lx, y: ly, z: lz };
   }
 

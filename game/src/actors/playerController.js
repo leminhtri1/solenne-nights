@@ -35,6 +35,7 @@ export class PlayerController {
     this.figure.x = x; this.figure.z = z; this.figure.y = 0; this.figure.yaw = yaw;
     this.figure.visible = true;
     this.figure.state = 'idle';
+    this.figure.roll = 0;
   }
 
   update(dt) {
@@ -153,6 +154,7 @@ export class PlayerController {
     v.siren = false;
     this.vehicle = v;
     this.figure.visible = false;
+    this.seatRider(v);
     this.enterCooldown = 0.6;
     this.aiming = false;
     game.cameraRig.snapBehind(v.body.heading);
@@ -210,6 +212,7 @@ export class PlayerController {
     }
     const b = v.body;
     this.figure.x = b.x; this.figure.z = b.z;
+    this.seatRider(v);
     const st = this.game.state.stats;
     st.distance += b.speed * dt;
     st.maxSpeed = Math.max(st.maxSpeed, b.speed * 3.6);
@@ -217,6 +220,25 @@ export class PlayerController {
       if (v.body.sunk) this.exitSinking();
       else { this.damage(80, 'explosion'); this.exitVehicleForced(); }
     }
+  }
+
+  /** On a bike or at a boat's wheel the rider stays visible, posed on the vehicle. */
+  seatRider(v) {
+    const fig = this.figure;
+    const open = v.def.kind === 'bike' || v.def.kind === 'boat';
+    fig.visible = open;
+    if (!open) return;
+    const b = v.body;
+    const boat = v.def.kind === 'boat';
+    const back = boat ? -0.25 : -0.15;
+    fig.x = b.x + Math.sin(b.heading) * back + (boat ? Math.cos(b.heading) * -0.35 : 0);
+    fig.z = b.z + Math.cos(b.heading) * back - (boat ? Math.sin(b.heading) * -0.35 : 0);
+    fig.y = v.mesh.position.y + (boat ? 0.95 : 0.12);
+    fig.yaw = b.heading;
+    fig.roll = boat ? 0 : v.mesh.rotation.z;
+    fig.state = boat ? 'helm' : 'ride';
+    fig.speed = 0;
+    fig.aim = false;
   }
 
   exitSinking() {

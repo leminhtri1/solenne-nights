@@ -108,8 +108,9 @@ export class ParticleEffects {
     this.screenFlash = Math.max(0, this.screenFlash - dt * 2.5);
   }
 
-  flash(x, y, z, color, power, duration) {
+  flash(x, y, z, color, power, duration, reach = 14) {
     this.flashLight.position.set(x, y, z);
+    this.flashLight.distance = reach;
     this.flashLight.color.set(color);
     this.flashPower = power;
     this.flashDuration = duration;
@@ -144,7 +145,7 @@ export class ParticleEffects {
     this.hot.emit(x, y, z, dx * 2, 0, dz * 2, 0xffe0a0, big ? 2.6 : 1.8, 0.07, 0);
     this.hot.emit(x + dx * 0.4, y, z + dz * 0.4, dx * 6, 0, dz * 6, 0xff9a30, big ? 1.6 : 1.1, 0.06, 0);
     this.soft.emit(x, y, z, dx * 1.5 + this.r(0.3), 0.6, dz * 1.5 + this.r(0.3), 0xbbbbbb, 0.5, 0.6, 1.4);
-    this.flash(x, y, z, 0xffc070, big ? 30 : 18, 0.06);
+    this.flash(x, y, z, 0xffb060, big ? 7 : 4, 0.06, big ? 12 : 9);
   }
 
   impact(x, y, z) {
@@ -162,7 +163,7 @@ export class ParticleEffects {
     }
     for (let i = 0; i < 30; i += 1) this.soft.emit(x + this.r(2), y + this.rng() * 2, z + this.r(2), this.r(4), 2 + this.rng() * 4, this.r(4), 0x2b2b2b, 3, 2.5 + this.rng() * 1.5, 3);
     this.sparks(x, y, z, 30);
-    this.flash(x, y + 2, z, 0xff9040, 140, 0.6);
+    this.flash(x, y + 2, z, 0xff9040, 120, 0.6, 45);
     this.screenFlash = 0.35;
   }
 

@@ -14,7 +14,8 @@ void main() {
   float depth = -mv.z;
   gl_PointSize = min(size * scale / max(depth, 0.1), 360.0);
   float fog = smoothstep(fogNear, fogFar * 1.25, depth);
-  vAlpha = mix(1.0, night, nightOnly) * (1.0 - fog * 0.85);
+  // fade halos that pass right by the camera instead of letting them fill the screen
+  vAlpha = mix(1.0, night, nightOnly) * (1.0 - fog * 0.85) * smoothstep(1.5, 9.0, depth);
   vColor = tint;
 }`;
 const FRAG = /* glsl */ `

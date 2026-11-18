@@ -182,7 +182,7 @@ export class StreetProps {
 
   /** Night factor 0..1: light pools and billboard lamps come up after dusk. */
   setNight(night) {
-    if (this.poolMaterial) this.poolMaterial.opacity = 0.6 * night;
+    if (this.poolMaterial) this.poolMaterial.opacity = 0.34 * night;
     for (const m of this.billboardMaterials || []) m.emissiveIntensity = 0.55 * night;
     for (const m of this.neonMaterials || []) m.color.setScalar(0.8 + 0.9 * night);
   }

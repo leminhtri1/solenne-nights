@@ -10,6 +10,7 @@
 //   map    - the full map with the story so far
 import * as THREE from 'three';
 import { wrapAngle, clamp } from '../core/mathUtils.js';
+import { RACES } from '../missions/sideActivities.js';
 
 const STEP = 1 / 60;
 
@@ -187,6 +188,58 @@ const SCENES = {
     game.autopilot = null;
     game.dialogue.pin('halloran', 'Kessane’s yacht just docked at the villa. Every cop in Solenne is on the causeway. Go!', game.cast);
     game.audio.radio = { nowPlaying: { station: 'RADIO CALOR 94.7', title: 'Marea Alta', artist: 'La Sonora Neón', art: 'linear-gradient(135deg,#ff3b3b,#ffd166)' } };
+    finalFrames(game);
+  },
+
+  async causeway(game) {
+    setup(game, 19.45);
+    game.teleportPlayer(560, -296, Math.PI / 2);
+    // keep the eastbound lane of the causeway clear for the run
+    for (const v of game.vehicles.list.slice()) if (Math.abs(v.body.z + 300) < 14 && v.body.x > 540 && v.body.x < 900) game.vehicles.remove(v);
+    const bike = game.vehicles.spawn('bike', 600, -295, Math.PI / 2, { role: 'mission', paint: 0x00f5d4 });
+    bike.body.invulnerable = true;
+    game.player.enterVehicle(bike, false);
+    bike.body.setVelocityForward(42);
+    game.state.storyIndex = 6;
+    game.state.money = 61380;
+    game.state.respect = 1240;
+    game.state.health = 91;
+    game.state.armour = 80;
+    game.state.weapons.smg = true;
+    game.state.ammo.smg = 120;
+    game.state.weapon = 'pistol';
+    game.state.races = { 'lumen-loop': 71.2, coastline: 66.8 };
+    game.activities.startRace(RACES[2]);
+    game.activities.cp = 2;
+    game.activities.time = 24.6;
+    game.autopilot = laneAutopilot(bike, -295, Math.PI / 2);
+    simulate(game, 1.4);
+    game.autopilot = null;
+    const pb = bike.body;
+    game.police.setWanted(2);
+    addUnit(game, 'patrol', pb.x - 5, -302.5, Math.PI / 2, pb.speed);
+    addUnit(game, 'patrol', pb.x - 10, -297, Math.PI / 2, pb.speed);
+    const flank = game.police.units.slice(0, 2);
+    flank.forEach((u, k) => {
+      const b = u.vehicle.body;
+      b.x = pb.x + (k ? -2.5 : 3.5); b.z = k ? -306.5 : -302.2; b.heading = pb.heading + (k ? 0.03 : 0.1);
+      b.setVelocityForward(pb.speed);
+      u.status = k ? 'PURSUIT' : 'RAMMING';
+      game.vehicles.syncMesh(u.vehicle);
+    });
+    game.police.setWanted(3);
+    const heli = game.police.heli;
+    heli.activate(pb.x, pb.z);
+    heli.x = pb.x + 60; heli.z = pb.z + 14; heli.y = 21;
+    heli.heading = Math.atan2(pb.x - heli.x, pb.z - heli.z);
+    heli.aim.set(pb.x + 3, 0, pb.z);
+    heli.update(0, { x: pb.x, z: pb.z });
+    game.police.inSight = true;
+    game.police.lastSeen = { x: pb.x, z: pb.z };
+    game.player.seatRider(bike);
+    game.dialogue.pin('dispatch', 'All units: motorcycle eastbound on the Halcyon Causeway. Close the island road!', game.cast);
+    game.audio.radio = { nowPlaying: { station: 'RADIO CALOR 94.7', title: 'Noche de Verano', artist: 'Santa Brisa', art: 'linear-gradient(135deg,#ff3b3b,#ffd166)' } };
+    game.cameraRig.shake = 0;
     finalFrames(game);
   },
 

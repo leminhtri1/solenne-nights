@@ -81,6 +81,11 @@ try {
       ready = r.result.value === true;
     }
     if (!ready) { console.log(`${shot.name}: timed out`); continue; }
+    const extra = opt('eval', null);
+    if (extra) {
+      const r = await send('Runtime.evaluate', { expression: `(() => { ${extra}; solenne.frame(0); return 'ok'; })()`, returnByValue: true });
+      console.log('eval:', r.result.value ?? r.exceptionDetails?.exception?.description);
+    }
     await sleep(400);
     let q = quality;
     let data;

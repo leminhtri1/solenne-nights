@@ -93,9 +93,9 @@ export class PostEffects {
   setGrade(night, golden) {
     const g = this.composite.uniforms.grade.value;
     g.set(1 + golden * 0.06 - night * 0.04, 1 - night * 0.02, 1 - golden * 0.06 + night * 0.08);
-    this.composite.uniforms.bloomStrength.value = 0.55 + night * 0.75;
-    this.composite.uniforms.exposure.value = 1.0 + night * 0.25;
-    this.bright.uniforms.threshold.value = 0.95 - night * 0.3;
+    this.composite.uniforms.bloomStrength.value = 0.55 + night * 0.4;
+    this.composite.uniforms.exposure.value = 1.0 + night * 0.15;
+    this.bright.uniforms.threshold.value = 0.95 - night * 0.15;
   }
 
   render(scene, camera) {
