@@ -179,7 +179,8 @@ const SCENES = {
     if (h[3]) h[3].takeHit(500, 'player');
     // the collectors' getaway car takes a stray round to the tank
     const getaway = game.vehicles.spawn('sedan', -401, -244, Math.PI / 2 + 0.4, { role: 'parked', paint: 0x15151c });
-    game.vehicles.explode(getaway);
+    const wreck = game.vehicles.spawn('sedan', -409, -250, -0.5, { role: 'parked', paint: 0x2a2a30 });
+    game.vehicles.explode(wreck);
     game.police.setWanted(2);
     const u = addUnit(game, 'patrol', -392, -254, 0.35, 4);
     u.status = 'ON FOOT';
@@ -211,8 +212,16 @@ const SCENES = {
     for (const a of h) if (!a.dead) a.fig.aim = true;
     game.state.ammo.smg = 87;
     for (let k = 0; k < 3; k += 1) { p.fireCooldown = 0; p.fire(); game.step(STEP * 3); }
+    game.vehicles.explode(getaway);
+    for (let k = 0; k < 7; k += 1) game.step(STEP);
     p.fireCooldown = 0;
     p.fire();
+    game.step(STEP);
+    // the player swings the camera out to the right for a wider look at the street
+    for (let i = 0; i < 40; i += 1) game.cameraRig.update(STEP, { position: p.figure, aiming: false });
+    game.cameraRig.yaw = 0.34;
+    game.cameraRig.pitch = 0.16;
+    for (let i = 0; i < 40; i += 1) game.cameraRig.update(STEP, { position: p.figure, aiming: false });
     game.dialogue.pin('celeste', 'Those are Kessane’s boys. Remind them whose street this is, mijo.', game.cast);
     game.showRadioOnFoot = false;
     game.cameraRig.shake = 0;
