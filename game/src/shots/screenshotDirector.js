@@ -106,7 +106,7 @@ const SCENES = {
     const pb = game.player.vehicle.body;
     pb.setVelocityForward(47);
     const pack = game.police.units.filter((u) => u.kind === 'patrol' || u.kind === 'swat');
-    const slots = [[1.2, -298.6, 0.1, 'RAMMING'], [-1.0, -290.6, -0.08, 'FIRING'], [10, -304.2, 0.04, 'PURSUIT'], [17, -291.2, -0.03, 'FIRING'], [-14, -303, 0.03, 'PURSUIT'], [-24, -296.5, 0, 'PURSUIT']];
+    const slots = [[1.2, -298.6, 0.1, 'RAMMING'], [4.2, -291.4, -0.07, 'FIRING'], [10, -304.2, 0.04, 'PURSUIT'], [17, -291.2, -0.03, 'FIRING'], [-14, -303, 0.03, 'PURSUIT'], [-24, -296.5, 0, 'PURSUIT']];
     pack.forEach((u, k) => {
       const slot = slots[k];
       if (!slot) return;
@@ -129,6 +129,19 @@ const SCENES = {
       game.step(STEP);
     }
     pack.forEach((u, k) => { if (slots[k]) u.status = slots[k][3]; });
+    // people on both sidewalks ahead duck or scatter as the pursuit tears past
+    const bystanders = game.peds.people.filter((q) => !q.dead).slice(0, 16);
+    bystanders.forEach((q, k) => {
+      const right = k % 2 === 0;
+      q.fig.x = pb.x + 14 + k * 4.2 + (k % 3);
+      q.fig.z = right ? -287.2 - (k % 4) * 0.6 : -312.8 + (k % 4) * 0.6;
+      q.fig.y = 0.2; q.fig.visible = true;
+      q.state = k % 3 === 0 ? 'cower' : 'flee';
+      q.fear = 8;
+      q.threat = { x: pb.x, z: -300 };
+      q.fig.yaw = right ? 0.4 : Math.PI - 0.4;
+    });
+    for (let i = 0; i < 6; i += 1) game.peds.update(STEP);
     const heli = game.police.heli;
     heli.x = game.player.x + 24; heli.z = game.player.z + 5.5; heli.y = 8.6;
     heli.heading = Math.PI + 0.45;

@@ -41,7 +41,7 @@ void main() {
   vec3 c = texture2D(scene, vUv).rgb;
   // speed: streak the frame toward its edges along rays from the centre
   vec2 fromC = vUv - vec2(0.5, 0.48);
-  float edge = smoothstep(0.22, 0.7, length(fromC * vec2(1.6, 1.0)));
+  float edge = smoothstep(0.3, 0.78, length(fromC * vec2(1.6, 1.0)));
   float amt = speedBlur * edge;
   if (amt > 0.001) {
     vec3 acc = c;
