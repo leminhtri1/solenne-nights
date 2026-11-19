@@ -158,7 +158,7 @@ export class PoliceHelicopter {
     this.beam.material.opacity = (0.08 + night * 0.04) * near;
     this.pool.position.set(this.aim.x, 0.15, this.aim.z);
     this.pool.scale.set(radius * 2.6, 1, radius * 2.6);
-    this.pool.material.opacity = (0.12 + night * 0.38) * Math.max(0.3, near);
+    this.pool.material.opacity = (0.12 + night * 0.24) * Math.max(0.3, near);
     this.lamp = { x: lx, y: ly, z: lz };
   }
 

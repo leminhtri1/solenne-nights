@@ -77,7 +77,9 @@ export class CameraRig {
       const dist = (view.dist + Math.min(speed, 50) * view.perSpeed) * size;
       const height = view.height * size + Math.max(0, this.pitch) * 5;
       desired = new THREE.Vector3(b.x + Math.sin(this.yaw) * dist, b.y + height, b.z + Math.cos(this.yaw) * dist);
-      const lead = Math.min(speed, 40) * 0.16;
+      // look ahead of the car, but not when the view has been swung round to its front
+      this.forwardness = Math.max(0, Math.cos(wrapAngle(this.yaw - behind)));
+      const lead = Math.min(speed, 40) * 0.16 * this.forwardness;
       lookAt = new THREE.Vector3(b.x + Math.sin(b.heading) * lead, b.y + view.lookUp * size, b.z + Math.cos(b.heading) * lead);
       fov = view.fov + clamp(speed, 0, 60) * view.fovGain;
     } else {
