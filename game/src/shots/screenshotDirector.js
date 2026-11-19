@@ -274,13 +274,20 @@ const SCENES = {
 
   async map(game) {
     setup(game, 20);
-    game.teleportPlayer(-50, -280, 0);
+    game.teleportPlayer(210, -300, Math.PI / 2);
+    const car = game.vehicles.spawn('vireo', 210, -295, Math.PI / 2, { role: 'mission', paint: 0xff2d55 });
+    game.player.enterVehicle(car, false);
     game.state.storyIndex = 5;
-    game.state.tokens = [1, 4, 7, 9, 13, 18, 22];
+    game.state.money = 48210;
+    game.state.respect = 820;
+    game.state.taxiFares = 4;
+    game.state.tokens = [1, 4, 7, 9, 13, 18, 22, 2, 11];
     game.state.races = { 'lumen-loop': 71.2 };
-    game.police.setWanted(2);
+    game.police.setWanted(3);
+    addUnit(game, 'patrol', 120, -300, Math.PI / 2, 20);
+    addUnit(game, 'patrol', 200, -205, Math.PI, 20);
     simulate(game, 0.5);
-    game.waypoint = { x: 1100, z: -200 };
+    game.waypoint = { x: 1100, z: -190 };
     game.hudMinimap.routeTimer = 0;
     game.hudMinimap.updateRoute(0);
     finalFrames(game, 1);
