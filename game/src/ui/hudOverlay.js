@@ -5,6 +5,7 @@
 import { WEAPONS, WEAPON_ORDER } from '../combat/weaponCatalog.js';
 import { rankFor } from '../core/gameState.js';
 import { districtAt } from '../world/cityLayout.js';
+import { WantedBanner } from './wantedBanner.js';
 
 const $ = (id) => document.getElementById(id);
 const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
@@ -25,6 +26,7 @@ export class HudOverlay {
     this.hurt = 0;
     this.speedo = $('speedo-canvas').getContext('2d');
     this.lastWeaponKey = '';
+    this.wantedBanner = new WantedBanner(game);
     game.events.on('playerHurt', () => { this.hurt = 0.6; });
   }
 
@@ -58,6 +60,7 @@ export class HudOverlay {
     this.toastTime -= dt;
     if (this.toastTime <= 0) $('toast').classList.add('hidden');
     this.hurt = Math.max(0, this.hurt - dt);
+    this.wantedBanner.update(dt);
     $('hit-vignette').style.opacity = String(Math.max(this.hurt * 1.4, g.state.health < 30 ? 0.35 + Math.sin(g.clock * 6) * 0.15 : 0));
     $('crosshair').classList.toggle('hidden', !g.player.aiming);
     this.textTimer -= dt;
@@ -91,7 +94,10 @@ export class HudOverlay {
     if (st.wanted > 0 || roster.length) {
       pp.classList.remove('hidden');
       $('pp-title').textContent = `SPD RESPONSE · ${roster.length} UNIT${roster.length === 1 ? '' : 'S'}`;
-      $('pp-list').innerHTML = roster.slice(0, 6).map((u) => `<div class="pp-row"><span class="ico ${u.kind === 'air' ? 'air' : ''}"></span><span class="cs">${u.callsign}</span><span class="dist">${Math.round(u.distance)}m</span><span class="st ${u.status.replace(' ', '-')}">${u.status}</span></div>`).join('');
+      const shown = roster.length > 7 ? 6 : 7;
+      const more = roster.length - shown;
+      $('pp-list').innerHTML = roster.slice(0, shown).map((u) => `<div class="pp-row"><span class="ico ${u.kind === 'air' ? 'air' : ''}"></span><span class="cs">${u.callsign}</span><span class="dist">${Math.round(u.distance)}m</span><span class="st ${u.status.replace(' ', '-')}">${u.status}</span></div>`).join('')
+        + (more > 0 ? `<div class="pp-more">+${more} MORE UNIT${more === 1 ? '' : 'S'} EN ROUTE</div>` : '');
       // nudge below the mission panel, however tall it is
       pp.style.top = `${$('mission-panel').offsetHeight + 26}px`;
     } else pp.classList.add('hidden');
@@ -118,7 +124,7 @@ export class HudOverlay {
         const def = WEAPONS[k];
         const cls = `wslot${st.weapons[k] ? ' owned' : ''}${st.weapon === k ? ' active' : ''}`;
         const ammo = def.melee ? '∞' : st.weapons[k] ? `${st.ammo[k]}` : '—';
-        return `<div class="${cls}"><span class="key">${i + 1}</span>${WEAPON_ART[k]}<span class="ammo">${ammo}</span></div>`;
+        return `<div class="${cls}"><span class="key">${i + 1}</span>${WEAPON_ART[k]}<span class="wname">${def.name}</span><span class="ammo">${ammo}</span></div>`;
       }).join('');
     }
     // bars
@@ -126,7 +132,7 @@ export class HudOverlay {
     $('bar-armour').style.width = `${st.armour}%`;
     const rank = rankFor(st.respect);
     $('bar-respect').style.width = `${Math.round(rank.progress * 100)}%`;
-    $('rank-label').textContent = `RESPECT · ${rank.title}`;
+    $('rank-label').textContent = `LV ${rank.level} · ${rank.title}`;
     $('district').textContent = districtAt(g.player.x, g.player.z).name;
     // vehicle
     const v = g.player.vehicle;

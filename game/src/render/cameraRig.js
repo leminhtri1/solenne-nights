@@ -5,6 +5,13 @@
 import * as THREE from 'three';
 import { clamp, damp, lerp, wrapAngle } from '../core/mathUtils.js';
 
+/** Chase distances the player cycles with V: low and close, standard, high and far. */
+export const CHASE_VIEWS = [
+  { name: 'CLOSE CHASE', dist: 5.6, perSpeed: 0.014, height: 1.85, lookUp: 1.25, fov: 52, fovGain: 0.2 },
+  { name: 'STANDARD', dist: 6.4, perSpeed: 0.026, height: 2.1, lookUp: 1.3, fov: 56, fovGain: 0.24 },
+  { name: 'HIGH', dist: 10.5, perSpeed: 0.03, height: 4.4, lookUp: 1.1, fov: 58, fovGain: 0.24 },
+];
+
 export class CameraRig {
   constructor(camera, collision) {
     this.camera = camera;
@@ -19,6 +26,13 @@ export class CameraRig {
     this.cinematic = null;
     this.mode = 'foot';
     this.initialised = false;
+    this.viewIndex = 0;
+  }
+
+  /** Next chase view (V). Returns its name for a toast. */
+  cycleView() {
+    this.viewIndex = (this.viewIndex + 1) % CHASE_VIEWS.length;
+    return CHASE_VIEWS[this.viewIndex].name;
   }
 
   /** Mouse look: dx, dy in pixels. */
@@ -56,15 +70,16 @@ export class CameraRig {
       this.orbitIdle += dt;
       const behind = b.heading + Math.PI;
       if (this.orbitIdle > 1.4 || this.mode !== 'vehicle') this.yaw += wrapAngle(behind - this.yaw) * damp(this.mode !== 'vehicle' ? 30 : 3.2, dt);
-      if (this.orbitIdle > 1.4) this.pitch += (0.2 - this.pitch) * damp(2, dt);
+      if (this.orbitIdle > 1.4) this.pitch += (0.12 - this.pitch) * damp(2, dt);
       this.mode = 'vehicle';
-      const size = def.kind === 'bike' ? 0.75 : def.body === 'van' ? 1.25 : def.kind === 'boat' ? 1.35 : 1;
-      const dist = (7.0 + Math.min(speed, 50) * 0.028) * size;
-      const height = 2.5 * size + this.pitch * 6;
+      const view = CHASE_VIEWS[this.viewIndex];
+      const size = def.kind === 'bike' ? 0.8 : def.body === 'van' ? 1.25 : def.kind === 'boat' ? 1.35 : 1;
+      const dist = (view.dist + Math.min(speed, 50) * view.perSpeed) * size;
+      const height = view.height * size + Math.max(0, this.pitch) * 5;
       desired = new THREE.Vector3(b.x + Math.sin(this.yaw) * dist, b.y + height, b.z + Math.cos(this.yaw) * dist);
-      const lead = Math.min(speed, 40) * 0.12;
-      lookAt = new THREE.Vector3(b.x + Math.sin(b.heading) * lead, b.y + 1.3 * size, b.z + Math.cos(b.heading) * lead);
-      fov = 58 + clamp(speed, 0, 60) * 0.26;
+      const lead = Math.min(speed, 40) * 0.16;
+      lookAt = new THREE.Vector3(b.x + Math.sin(b.heading) * lead, b.y + view.lookUp * size, b.z + Math.cos(b.heading) * lead);
+      fov = view.fov + clamp(speed, 0, 60) * view.fovGain;
     } else {
       this.mode = target.aiming ? 'aim' : 'foot';
       const aiming = target.aiming;

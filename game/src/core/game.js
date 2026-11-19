@@ -110,19 +110,19 @@ export class Game {
 
   buildSystems() {
     this.particles = new ParticleEffects(this.scene, this.rng);
-    this.characters = new CharacterRig(this.scene, 110);
+    this.characters = new CharacterRig(this.scene, 190);
     this.vehicles = new VehicleManager(this);
     this.cameraRig = new CameraRig(this.camera, this.collision);
     this.player = new PlayerController(this);
     this.combat = new CombatSystem(this);
-    this.traffic = new TrafficAI(this);
-    this.peds = new PedestrianCrowd(this, 46);
+    this.traffic = new TrafficAI(this, { moving: 38, parked: 30 });
+    this.peds = new PedestrianCrowd(this, 100);
     this.police = new PoliceDispatch(this);
     this.dialogue = new DialogueBox(this);
     this.missions = new MissionRunner(this);
     this.activities = new SideActivities(this);
     this.hud = new HudOverlay(this);
-    this.cityMap = paintCityMap();
+    this.cityMap = paintCityMap(this.collision);
     this.hudMinimap = new Minimap(document.getElementById('minimap'), this, this.cityMap);
     this.mapScreen = new MapScreen(this, this.cityMap);
     this.audio = new SoundEffects(this);
@@ -291,6 +291,7 @@ export class Game {
     const input = this.input;
     if (this.handleMenuKeys() || this.paused) return;
     if (input.pressed('KeyR') && this.player.vehicle) this.audio.radio?.nextStation();
+    if (input.pressed('KeyV')) this.hud.toast(`Camera: ${this.cameraRig.cycleView()}`, 1.5);
     const shop = this.shop.nearbyShop();
     const p = this.player;
     let prompt = this.activities.mode ? null : this.activities.prompt;
@@ -393,6 +394,8 @@ export class Game {
     for (const glow of [this.staticGlow, this.dynamicGlow]) glow.sync(this.renderer, this.camera, this.sky.night, this.scene.fog);
     this.particles.sync(this.renderer, this.camera);
     this.post.composite.uniforms.flash.value = this.particles.screenFlash;
+    const pv = this.running ? this.player.vehicle : null;
+    this.post.setSpeed(pv ? (pv.body.speed - 24) / 26 : 0);
     this.post.render(this.scene, this.camera);
     if (this.running) {
       this.hud.update(dt);

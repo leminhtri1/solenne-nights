@@ -59,9 +59,10 @@ function addUnit(game, type, x, z, heading, speed, status) {
   return u;
 }
 
-function finalFrames(game, count = 2) {
+function finalFrames(game, count = 2, { wantedBanner = false } = {}) {
   game.input.endFrame();
   game.hud.bannerTime = 0;
+  if (!wantedBanner) game.hud.wantedBanner.update(99);
   for (let i = 0; i < count; i += 1) game.frame(0);
 }
 
@@ -70,6 +71,7 @@ const SCENES = {
     setup(game, 18.72);
     game.teleportPlayer(300, -295, Math.PI / 2);
     const v = game.vehicles.spawn('vireo', 300, -295, Math.PI / 2, { role: 'mission', paint: 0xff2d55 });
+    v.body.invulnerable = true;
     game.player.enterVehicle(v, false);
     v.body.setVelocityForward(37);
     game.state.storyIndex = 5;
@@ -85,10 +87,12 @@ const SCENES = {
     game.missions.advance();
     game.missions.cpIndex = 0;
     game.missions.timer = 31;
-    game.police.setWanted(3);
+    game.police.setWanted(2);
     addUnit(game, 'patrol', 299, -302.5, Math.PI / 2 + 0.03, 39);
     addUnit(game, 'patrol', 297, -289.5, Math.PI / 2 - 0.04, 39);
     addUnit(game, 'patrol', 250, -303, Math.PI / 2, 38);
+    addUnit(game, 'patrol', 240, -293, Math.PI / 2, 38);
+    addUnit(game, 'patrol', 205, -298, Math.PI / 2, 38);
     addUnit(game, 'swat', 225, -297, Math.PI / 2, 34);
     game.police.heli.activate(game.player.x, game.player.z);
     game.police.heli.x = 360; game.police.heli.z = -330; game.police.heli.y = 40;
@@ -98,25 +102,43 @@ const SCENES = {
     game.police.placeRoadblock();
     simulate(game, 0.5, 0.5);
     game.autopilot = null;
-    // the two flanking units are pulled alongside for the frame (their AI keeps them there in play)
+    // the pursuit is pulled into a tight pack for the frame (their AI holds these slots in play)
     const pb = game.player.vehicle.body;
-    const flank = game.police.units.filter((u) => u.kind === 'patrol').slice(0, 2);
-    flank.forEach((u, k) => {
+    pb.setVelocityForward(47);
+    const pack = game.police.units.filter((u) => u.kind === 'patrol' || u.kind === 'swat');
+    const slots = [[1.2, -298.6, 0.1, 'RAMMING'], [-1.0, -290.6, -0.08, 'FIRING'], [10, -304.2, 0.04, 'PURSUIT'], [17, -291.2, -0.03, 'FIRING'], [-14, -303, 0.03, 'PURSUIT'], [-24, -296.5, 0, 'PURSUIT']];
+    pack.forEach((u, k) => {
+      const slot = slots[k];
+      if (!slot) return;
       const b = u.vehicle.body;
-      b.x = pb.x - (k ? 7.5 : 2.5); b.z = k ? -289.6 : -302.6; b.heading = pb.heading + (k ? -0.06 : 0.07);
+      b.x = pb.x + slot[0]; b.z = slot[1]; b.heading = pb.heading + slot[2];
       b.setVelocityForward(pb.speed);
-      u.status = k ? 'PURSUIT' : 'RAMMING';
+      u.status = slot[3];
       game.vehicles.syncMesh(u.vehicle);
     });
+    game.police.setWanted(3);
+    // the last fraction of a second of the chase: window fire, scraping sparks, tyre smoke
+    const shooters = pack.filter((u) => u.status === 'FIRING');
+    for (let i = 0; i < 14; i += 1) {
+      for (const u of pack) { u.vehicle.body.setVelocityForward(pb.speed); }
+      if (i % 5 === 0) for (const u of shooters) { u.fireCooldown = 0; game.police.windowFire(u, 8, 0); }
+      const ram = pack[0].vehicle.body;
+      game.particles.sparks(pb.x - Math.sin(pb.heading) * 1.6 + Math.cos(pb.heading) * 1.0, 0.7, (pb.z + ram.z) / 2 + 0.6, 4);
+      const back = v.def.length * 0.36;
+      for (const sd of [-1, 1]) game.particles.tyreSmoke(pb.x - Math.sin(pb.heading) * back, pb.z + sd * 0.9);
+      game.step(STEP);
+    }
+    pack.forEach((u, k) => { if (slots[k]) u.status = slots[k][3]; });
     const heli = game.police.heli;
-    heli.x = game.player.x + 62; heli.z = game.player.z - 14; heli.y = 27;
-    heli.heading = Math.atan2(game.player.x - heli.x, game.player.z - heli.z);
-    heli.aim.set(game.player.x + 4, 0, game.player.z);
+    heli.x = game.player.x + 24; heli.z = game.player.z + 5.5; heli.y = 8.6;
+    heli.heading = Math.PI + 0.45;
+    heli.aim.set(game.player.x + 5, 0, game.player.z - 1);
     heli.update(0, { x: game.player.x, z: game.player.z });
+    for (let i = 0; i < 20; i += 1) game.cameraRig.update(STEP, { vehicle: v, position: game.player.figure });
     game.dialogue.pin('juno', 'Cops on the causeway! Stay on the gas, the lighthouse is past the bridge!', game.cast);
     game.audio.radio = { nowPlaying: { station: 'SOLAR FM 101.3', title: 'Causeway Lights', artist: 'VHS Lagoon', art: 'linear-gradient(135deg,#ff4fa3,#ffb347)' } };
     game.cameraRig.shake = 0;
-    finalFrames(game);
+    finalFrames(game, 2, { wantedBanner: true });
   },
 
   async neon(game) {

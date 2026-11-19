@@ -7,7 +7,7 @@ import { randomLook } from '../actors/characterRig.js';
 import { clamp, wrapAngle, damp } from '../core/mathUtils.js';
 import { PoliceHelicopter } from './policeHelicopter.js';
 
-const UNITS_FOR_LEVEL = [0, 2, 3, 4, 5, 6];
+const UNITS_FOR_LEVEL = [0, 2, 3, 5, 7, 9];
 const CALLSIGNS = ['MARLIN', 'CORAL', 'TIDE', 'REEF', 'DUNE', 'SURF', 'GULL', 'ORCA'];
 const OFFICER_LOOK = { skin: 0xc68642, shirt: 0x1b2f5a, pants: 0x14213d, hair: 0x111111, sleeves: true, scale: 1 };
 
@@ -263,6 +263,7 @@ export class PoliceDispatch {
         catchUp = Math.max(4, pv.speed + clamp(along * 0.9, -12, 10));
       }
       u.status = dist < 22 && this.wanted >= 2 ? 'RAMMING' : 'PURSUIT';
+      if (this.windowFire(u, dist, dt)) u.status = 'FIRING';
     } else {
       u.routeTimer -= dt;
       if (u.routeTimer <= 0 || !u.route.length) {
@@ -297,6 +298,26 @@ export class PoliceDispatch {
     v.input.handbrake = Math.abs(diff) > 1.3 && speed > 12;
     if (Math.abs(speed) < 1.2 && v.input.throttle > 0.3) u.stuck += dt; else u.stuck = Math.max(0, u.stuck - dt);
     if (u.stuck > 1.4) { u.stuck = 0; u.reverse = 1.1; }
+  }
+
+  /**
+   * From three stars the partner leans out of the passenger window and fires at the player.
+   * Returns true while the unit is shooting (for the FIRING status on the HUD roster).
+   */
+  windowFire(u, dist, dt) {
+    const g = this.game;
+    u.fireCooldown = (u.fireCooldown ?? 1 + g.rng()) - dt;
+    u.firing = Math.max(0, (u.firing ?? 0) - dt);
+    if (this.wanted < 3 || dist > 38 || dist < 5 || !g.player.alive) return u.firing > 0;
+    if (u.fireCooldown > 0) return u.firing > 0;
+    const b = u.vehicle.body;
+    const side = u.vehicle.id % 2 ? 1 : -1;
+    const x = b.x + Math.cos(b.heading) * side * 1.1, z = b.z - Math.sin(b.heading) * side * 1.1;
+    const yaw = Math.atan2(g.player.x - x, g.player.z - z) + (g.rng() - 0.5) * (0.1 + dist * 0.004);
+    g.combat.fire({ shooter: 'police', x, y: 1.35, z, yaw, pitch: 0, weapon: u.kind === 'swat' ? 'smg' : 'pistol', vehicle: u.vehicle });
+    u.fireCooldown = (u.kind === 'swat' ? 0.3 : 0.75) + g.rng() * 0.9;
+    u.firing = 1.2;
+    return true;
   }
 
   deployOfficers(u, count) {

@@ -86,6 +86,11 @@ try {
       const r = await send('Runtime.evaluate', { expression: `(() => { ${extra}; solenne.frame(0); return 'ok'; })()`, returnByValue: true });
       console.log('eval:', r.result.value ?? r.exceptionDetails?.exception?.description);
     }
+    const probe = opt('probe', null);
+    if (probe) {
+      const r = await send('Runtime.evaluate', { expression: `JSON.stringify((() => (${probe}))())`, returnByValue: true });
+      console.log('probe:', r.result.value ?? r.exceptionDetails?.exception?.description);
+    }
     await sleep(400);
     let q = quality;
     let data;

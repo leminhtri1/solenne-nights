@@ -9,7 +9,7 @@ const CONTROLS = [
   ['W A S D', 'Move / drive'], ['Mouse', 'Look / aim'], ['F', 'Enter · steal · exit'],
   ['Space', 'Handbrake'], ['Shift', 'Sprint'], ['RMB / LMB', 'Aim / fire'],
   ['1-4 · Wheel', 'Weapons'], ['R', 'Radio station'], ['E', 'Shop / interact'],
-  ['T', 'Races · fares · jobs'], ['M', 'Map'], ['Esc', 'Pause'],
+  ['T', 'Races · fares · jobs'], ['M', 'Map'], ['V', 'Camera view'], ['Esc', 'Pause'],
 ];
 
 export class GameMenus {

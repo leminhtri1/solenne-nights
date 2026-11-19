@@ -83,7 +83,7 @@ export class CombatSystem {
       hitTarget.takeHit(w.damage, shot.shooter, { x: dx, z: dz });
     } else if (hitVehicle) {
       g.particles.sparks(hx, hy, hz, 5);
-      hitVehicle.body.health -= w.damage * 0.35;
+      if (!hitVehicle.body.invulnerable) hitVehicle.body.health -= w.damage * 0.35;
       if (hitVehicle.role === 'player' && hitPlayer) g.player.damage(w.damage * 0.15, 'gunfire');
       g.events.emit('vehicleShot', { vehicle: hitVehicle, shooter: shot.shooter });
     } else if (best < range * 0.999) {

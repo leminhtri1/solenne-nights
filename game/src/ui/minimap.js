@@ -65,22 +65,24 @@ export class Minimap {
     g.beginPath();
     g.arc(R, R, R, 0, Math.PI * 2);
     g.clip();
-    g.fillStyle = '#0b2a44';
+    g.fillStyle = '#2479c4';
     g.fillRect(0, 0, W, W);
     g.translate(R, R);
     g.rotate(rot);
     g.scale(zoom, zoom);
     const [mx, mz] = toMap(px, pz);
     g.drawImage(this.cityMap, -mx, -mz);
-    // search zone
+    // police search zone: centred on the player while seen, left at the last sighting otherwise
     const pol = game.police;
-    if (game.state.wanted > 0 && !pol.inSight) {
+    if (game.state.wanted > 0) {
       const [sx, sz] = toMap(pol.lastSeen.x, pol.lastSeen.z);
-      g.fillStyle = 'rgba(255,40,70,0.18)';
-      g.strokeStyle = 'rgba(255,80,110,0.8)';
-      g.lineWidth = 2 / zoom;
+      const pulse = 0.5 + 0.5 * Math.sin(game.clock * 5);
+      const radius = (pol.inSight ? 55 + game.state.wanted * 12 : 70 + game.state.wanted * 20) * MAP_SCALE;
+      g.fillStyle = pol.inSight ? `rgba(255,30,60,${0.2 + pulse * 0.12})` : 'rgba(255,40,70,0.2)';
+      g.strokeStyle = pol.inSight ? `rgba(80,120,255,${0.6 + pulse * 0.4})` : 'rgba(255,80,110,0.85)';
+      g.lineWidth = 4 / zoom;
       g.beginPath();
-      g.arc(sx - mx, sz - mz, (70 + game.state.wanted * 20) * MAP_SCALE, 0, Math.PI * 2);
+      g.arc(sx - mx, sz - mz, radius, 0, Math.PI * 2);
       g.fill(); g.stroke();
     }
     // GPS route

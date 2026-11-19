@@ -49,6 +49,18 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #07060f; col
 .st.PURSUIT { background: #2a5bff; color: #fff; }
 .st.SPOTLIGHT { background: #e8f4ff; color: #0b1d3a; }
 .st.ON.FOOT, .st.ON-FOOT { background: #8a5cff; color: #fff; }
+.st.FIRING { background: #ffe14a; color: #3a0000; box-shadow: 0 0 10px rgba(255, 225, 74, 0.7); }
+.pp-more { margin-top: 3px; padding-top: 4px; border-top: 1px solid rgba(255, 255, 255, 0.12); font-size: 12px; font-weight: 900; letter-spacing: 1.5px; color: #ff8a9c; text-align: center; }
+
+/* WANTED banner: drops in at the top centre when the level rises */
+#wanted-banner { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); min-width: 380px; padding: 6px 28px 9px; text-align: center; border-radius: 14px;
+  background: linear-gradient(90deg, rgba(255, 30, 60, 0.82), rgba(20, 8, 30, 0.86) 30%, rgba(20, 8, 30, 0.86) 70%, rgba(40, 80, 255, 0.82));
+  border: 2px solid rgba(255, 255, 255, 0.55); box-shadow: 0 0 28px rgba(255, 40, 80, 0.7), 0 0 48px rgba(40, 90, 255, 0.45); animation: wbpulse 0.45s infinite alternate; }
+.wb-title { font-family: Impact, "Arial Black", sans-serif; font-size: 44px; letter-spacing: 10px; line-height: 1.05; color: #fff; text-shadow: 0 0 16px #ff2a4a, 0 3px 0 #50000f; }
+.wb-stars { font-size: 34px; letter-spacing: 6px; line-height: 1; color: rgba(255, 255, 255, 0.25); }
+.wb-stars b { color: var(--gold); font-weight: 400; text-shadow: 0 0 14px #ffb000, 0 2px 3px #000; }
+.wb-sub { margin-top: 3px; font-size: 13px; font-weight: 900; letter-spacing: 2.5px; text-transform: uppercase; color: #ffe1e6; }
+@keyframes wbpulse { from { box-shadow: 0 0 30px rgba(255, 40, 80, 0.85), 0 0 10px rgba(40, 90, 255, 0.3); } to { box-shadow: 0 0 10px rgba(255, 40, 80, 0.3), 0 0 40px rgba(40, 90, 255, 0.9); } }
 
 /* status column, top right */
 #status-panel { position: absolute; right: 20px; top: 14px; width: 300px; text-align: right; }
@@ -63,7 +75,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #07060f; col
 .sight { display: inline-block; margin-top: 2px; padding: 3px 10px; font-size: 12.5px; font-weight: 900; letter-spacing: 2px; border-radius: 5px; background: var(--red); color: #fff; box-shadow: 0 0 14px rgba(255, 59, 92, 0.7); }
 .sight.search { background: #3a3f5c; box-shadow: none; color: #cfd6ff; }
 .weapons { display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px; }
-.wslot { width: 66px; height: 58px; border-radius: 9px; background: var(--panel); border: 1px solid var(--panel-edge); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; opacity: 0.5; }
+.wslot .wname { font-size: 9.5px; font-weight: 800; letter-spacing: 0.3px; color: var(--dim); white-space: nowrap; line-height: 1.1; }
+.wslot.active .wname { color: var(--gold); }
+.wslot { width: 70px; height: 68px; border-radius: 9px; background: var(--panel); border: 1px solid var(--panel-edge); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; opacity: 0.5; }
 .wslot.owned { opacity: 0.85; }
 .wslot.active { opacity: 1; border-color: var(--gold); box-shadow: 0 0 14px rgba(255, 209, 102, 0.55); background: rgba(40, 26, 10, 0.75); }
 .wslot .key { position: absolute; top: 2px; left: 6px; font-size: 10px; font-weight: 800; color: var(--dim); }
