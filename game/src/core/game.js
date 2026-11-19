@@ -19,6 +19,7 @@ import { RoadNetwork } from '../world/roadNetwork.js';
 import { StreetProps } from '../world/streetProps.js';
 import { CityGenerator } from '../world/cityGenerator.js';
 import { Landmarks } from '../world/landmarks.js';
+import { SidewalkClutter } from '../world/sidewalkClutter.js';
 import { PLACES, groundHeight } from '../world/cityLayout.js';
 import { CharacterRig } from '../actors/characterRig.js';
 import { PlayerController } from '../actors/playerController.js';
@@ -103,6 +104,8 @@ export class Game {
     this.landmarks = new Landmarks({ collision: this.collision, props: this.props, glow: this.staticGlow, rng: createRandom(this.seed + 5) });
     this.scene.add(this.landmarks.build());
     this.scene.add(this.props.build());
+    this.clutter = new SidewalkClutter({ glow: this.staticGlow, rng: createRandom(this.seed + 23) });
+    this.scene.add(this.clutter.build());
     this.staticGlow.commit();
     this.pmrem = new THREE.PMREMGenerator(this.renderer);
     this.envHour = -10;

@@ -295,6 +295,17 @@ const SCENES = {
     finalFrames(game);
   },
 
+  /** On foot along a busy sidewalk in the late afternoon (a playtest view of street life). */
+  async stroll(game) {
+    setup(game, 17.4);
+    game.teleportPlayer(-330, -112.5, Math.PI / 2);
+    simulate(game, 2);
+    game.cameraRig.yaw = -Math.PI / 2 + 0.35;
+    game.cameraRig.pitch = 0.25;
+    simulate(game, 0.3, 0.3);
+    finalFrames(game, 1);
+  },
+
   async title(game) {
     game.state.hour = 19.0;
     game.menus.showTitle();

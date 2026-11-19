@@ -16,7 +16,10 @@ let quality = Number(opt('quality', 90));
 const port = 8000 + Math.floor(Math.random() * 900);
 const debugPort = 9300 + Math.floor(Math.random() * 500);
 const chrome = 'C:/Program Files/Google/Chrome/Application/chrome.exe';
-const shots = JSON.parse(readFileSync(join(repo, 'shots.json'), 'utf8')).filter((s) => !only || s.name.includes(only));
+const adHoc = opt('query', null);
+const shots = adHoc
+  ? [{ name: opt('name', 'adhoc.jpg'), query: adHoc }]
+  : JSON.parse(readFileSync(join(repo, 'shots.json'), 'utf8')).filter((s) => !only || s.name.includes(only));
 mkdirSync(outDir, { recursive: true });
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
