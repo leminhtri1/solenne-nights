@@ -3,6 +3,7 @@
 // announced as a 'gunshot' event, which scatters pedestrians and tells the police.
 import * as THREE from 'three';
 import { WEAPONS } from './weaponCatalog.js';
+import { damageFactor } from '../vehicles/vehicleTuning.js';
 
 export class CombatSystem {
   constructor(game) {
@@ -83,7 +84,7 @@ export class CombatSystem {
       hitTarget.takeHit(w.damage, shot.shooter, { x: dx, z: dz });
     } else if (hitVehicle) {
       g.particles.sparks(hx, hy, hz, 5);
-      if (!hitVehicle.body.invulnerable) hitVehicle.body.health -= w.damage * 0.35;
+      if (!hitVehicle.body.invulnerable) hitVehicle.body.health -= w.damage * 0.35 * damageFactor(hitVehicle.body);
       if (hitVehicle.role === 'player' && hitPlayer) g.player.damage(w.damage * 0.15, 'gunfire');
       g.events.emit('vehicleShot', { vehicle: hitVehicle, shooter: shot.shooter });
     } else if (best < range * 0.999) {

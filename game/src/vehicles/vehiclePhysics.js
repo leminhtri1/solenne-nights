@@ -4,6 +4,7 @@
 // a bicycle model with speed-sensitive steering. Buildings push the car out and dent it.
 import { clamp, damp, wrapAngle } from '../core/mathUtils.js';
 import { surfaceAt, groundHeight } from '../world/cityLayout.js';
+import { topSpeedFactor, accelFactor, gripFactor, damageFactor } from './vehicleTuning.js';
 
 export class VehicleBody {
   constructor(def, x, z, heading) {
@@ -50,16 +51,17 @@ export function stepVehicle(body, input, dt, collision) {
   let vR = body.vx * -cos + body.vz * sin;
   const throttle = body.health > 0 ? input.throttle : 0;
   const onSand = surfaceAt(body.x, body.z) === 'sand';
-  const top = def.maxSpeed * (onSand ? 0.55 : 1) * (body.health < def.health * 0.25 ? 0.7 : 1);
+  const top = def.maxSpeed * topSpeedFactor(body) * (onSand ? 0.55 : 1) * (body.health < def.health * 0.25 ? 0.7 : 1);
+  const accel = def.accel * accelFactor(body);
 
   body.braking = false;
   body.reversing = false;
   if (throttle > 0) {
     if (vF < -0.5) { vF += def.brake * throttle * dt; body.braking = true; }
-    else if (vF < top) vF += def.accel * throttle * dt * (1 - 0.65 * (vF / top) ** 2);
+    else if (vF < top) vF += accel * throttle * dt * (1 - 0.65 * (vF / top) ** 2);
   } else if (throttle < 0) {
     if (vF > 0.5) { vF -= def.brake * -throttle * dt; body.braking = true; }
-    else if (vF > -top * 0.3) { vF += def.accel * 0.55 * throttle * dt; body.reversing = true; }
+    else if (vF > -top * 0.3) { vF += accel * 0.55 * throttle * dt; body.reversing = true; }
   }
   // rolling resistance and aero drag
   const drag = (throttle === 0 ? 1.4 : 0.3) + Math.abs(vF) * 0.006;
@@ -67,7 +69,7 @@ export function stepVehicle(body, input, dt, collision) {
   if (input.handbrake) vF -= Math.sign(vF) * Math.min(Math.abs(vF), 7 * dt);
 
   // tyre grip on the sideways component
-  const grip = def.grip * (input.handbrake ? 0.13 : 1) * (onSand ? 0.6 : 1);
+  const grip = def.grip * gripFactor(body) * (input.handbrake ? 0.13 : 1) * (onSand ? 0.6 : 1);
   vR *= Math.exp(-grip * dt);
   body.slip = Math.abs(vR);
 
@@ -139,7 +141,7 @@ function bounce(body, nx, nz, restitution) {
   body.yawRate *= 0.5;
   const speed = -vn;
   if (speed > 6) {
-    if (!body.invulnerable) body.health = Math.max(0, body.health - (speed - 6) * 2.2 / body.def.mass);
+    if (!body.invulnerable) body.health = Math.max(0, body.health - ((speed - 6) * 2.2 / body.def.mass) * damageFactor(body));
     body.lastImpact = speed;
   }
   return speed > 3 ? { speed } : null;
@@ -164,8 +166,8 @@ export function collideVehicles(a, b) {
   b.vx += (j / mb) * nx; b.vz += (j / mb) * nz;
   const speed = -rel;
   if (speed > 5) {
-    if (!a.invulnerable) a.health = Math.max(0, a.health - speed * 1.2 / ma);
-    if (!b.invulnerable) b.health = Math.max(0, b.health - speed * 1.2 / mb);
+    if (!a.invulnerable) a.health = Math.max(0, a.health - (speed * 1.2 / ma) * damageFactor(a));
+    if (!b.invulnerable) b.health = Math.max(0, b.health - (speed * 1.2 / mb) * damageFactor(b));
   }
   return speed;
 }

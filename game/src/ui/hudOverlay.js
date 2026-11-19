@@ -6,6 +6,7 @@ import { WEAPONS, WEAPON_ORDER } from '../combat/weaponCatalog.js';
 import { rankFor } from '../core/gameState.js';
 import { districtAt } from '../world/cityLayout.js';
 import { WantedBanner } from './wantedBanner.js';
+import { tuneTag } from '../vehicles/vehicleTuning.js';
 
 const $ = (id) => document.getElementById(id);
 const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
@@ -138,7 +139,8 @@ export class HudOverlay {
     const v = g.player.vehicle;
     $('speedo').classList.toggle('hidden', !v);
     if (v) {
-      $('vehicle-name').textContent = v.def.short;
+      const tag = tuneTag(v.body);
+      $('vehicle-name').textContent = tag ? `${v.def.short} · ${tag}` : v.def.short;
       $('condition-fill').style.width = `${Math.max(0, (v.body.health / v.def.health) * 100)}%`;
     }
     // radio card

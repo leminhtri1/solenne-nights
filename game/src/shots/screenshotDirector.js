@@ -11,6 +11,8 @@
 import * as THREE from 'three';
 import { wrapAngle, clamp } from '../core/mathUtils.js';
 import { RACES } from '../missions/sideActivities.js';
+import { tuneOf } from '../vehicles/vehicleTuning.js';
+import { PLACES } from '../world/cityLayout.js';
 
 const STEP = 1 / 60;
 
@@ -72,6 +74,7 @@ const SCENES = {
     game.teleportPlayer(300, -295, Math.PI / 2);
     const v = game.vehicles.spawn('vireo', 300, -295, Math.PI / 2, { role: 'mission', paint: 0xff2d55 });
     v.body.invulnerable = true;
+    Object.assign(tuneOf(v.body), { engine: 2, tyres: 1, armour: 2 });
     game.player.enterVehicle(v, false);
     v.body.setVelocityForward(37);
     game.state.storyIndex = 5;
@@ -252,6 +255,7 @@ const SCENES = {
     for (const v of game.vehicles.list.slice()) if (Math.abs(v.body.z + 300) < 14 && v.body.x > 540 && v.body.x < 900) game.vehicles.remove(v);
     const bike = game.vehicles.spawn('bike', 600, -295, Math.PI / 2, { role: 'mission', paint: 0x00f5d4 });
     bike.body.invulnerable = true;
+    Object.assign(tuneOf(bike.body), { engine: 3, tyres: 2, armour: 0 });
     game.player.enterVehicle(bike, false);
     bike.body.setVelocityForward(42);
     game.state.storyIndex = 6;
@@ -317,6 +321,20 @@ const SCENES = {
     game.cameraRig.pitch = 0.25;
     simulate(game, 0.3, 0.3);
     finalFrames(game, 1);
+  },
+
+  /** In the Chromatica Customs bay with the upgrade menu open (a playtest view of the shop). */
+  async customs(game) {
+    setup(game, 18.2);
+    const [x, z] = PLACES.customs.door;
+    game.teleportPlayer(x, z - 6, 0);
+    const car = game.vehicles.spawn('vireo', x, z - 6, Math.PI / 2, { role: 'mission', paint: 0x13c4ff });
+    game.player.enterVehicle(car, false);
+    Object.assign(tuneOf(car.body), { engine: 1, tyres: 1, armour: 0 });
+    game.state.money = 23400;
+    simulate(game, 0.5);
+    finalFrames(game, 1);
+    game.shop.show('customs');
   },
 
   async title(game) {

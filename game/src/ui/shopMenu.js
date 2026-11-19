@@ -1,8 +1,9 @@
 // Shops and services at their doors: Brass & Barrel Arms (weapons, ammo, body armour),
-// Chromatica Customs (repair, respray, which also shakes off a wanted level the police have
-// not seen), and the Casa Aurora safehouse (sleep to heal and pass time, save the game).
+// Chromatica Customs (repair, engine / tyre / armour stages, respray, which also shakes off a
+// wanted level the police have not seen), and the Casa Aurora safehouse (sleep to heal and pass time, save the game).
 import { WEAPONS } from '../combat/weaponCatalog.js';
 import { PLACES } from '../world/cityLayout.js';
+import { TUNING, tuneOf } from '../vehicles/vehicleTuning.js';
 
 const $ = (id) => document.getElementById(id);
 const PAINTS = [[0xff3b3b, 'Solenne Red'], [0x13c4ff, 'Bay Blue'], [0xffd23f, 'Sundrop Yellow'], [0xf6f6f6, 'Pearl White'], [0x8a2be2, 'Lumen Violet'], [0x111111, 'Midnight Black'], [0x2ec4b6, 'Lagoon Teal'], [0xff7ad9, 'Flamingo Pink']];
@@ -71,6 +72,17 @@ export class ShopMenu {
       $('shop-sub').textContent = v ? `${v.def.name} · condition ${Math.round((v.body.health / v.def.health) * 100)}%` : 'Bring a vehicle into the bay.';
       if (v) {
         items.push({ label: 'Repair bodywork and engine', note: '$250', buy: () => { if (this.pay(250)) v.body.health = v.def.health; } });
+        const tune = tuneOf(v.body);
+        for (const [part, spec] of Object.entries(TUNING)) {
+          const next = tune[part] + 1;
+          if (next >= spec.stages.length) { items.push({ label: `${spec.name}: ${spec.stages[tune[part]]}`, note: 'maxed', buy: () => {} }); continue; }
+          items.push({ label: `${spec.name}: ${spec.stages[tune[part]]} → ${spec.stages[next]}`, note: `$${spec.prices[next].toLocaleString('en-US')}`, buy: () => {
+            if (!this.pay(spec.prices[next])) return;
+            tune[part] = next;
+            g.state.respect += 10;
+            g.hud.toast(`${spec.name} upgraded: ${spec.stages[next]}`);
+          } });
+        }
         for (const [color, name] of PAINTS) {
           items.push({ label: `Respray: ${name}`, note: '$150', swatch: color, buy: () => {
             if (!this.pay(150)) return;
