@@ -106,6 +106,9 @@ const SCENES = {
     for (const c of game.vehicles.list.slice()) if (c !== v && Math.abs(c.body.x - 500) < 12 && c.body.z < -70 && c.body.z > -300) game.vehicles.remove(c);
     for (let k = 0; k < 4; k += 1) addUnit(game, 'patrol', 500, -50 + k * 8, heading, 36);
     game.police.heli.activate(game.player.x, game.player.z);
+    // a wreck burning in the southbound lane a block ahead (it went up a moment before)
+    const wreck = game.vehicles.spawn('sedan', 499, -88 - 118, 0.9, { role: 'parked', paint: 0x3a3a44 });
+    game.vehicles.explode(wreck);
     game.autopilot = (() => { const steer = laneAutopilot(v, null, heading); return () => { steer(); v.body.x += (505 - v.body.x) * 0.1; }; })();
     simulate(game, 1.4);
     game.autopilot = null;
@@ -115,11 +118,8 @@ const SCENES = {
     // civilian traffic clears out of the pursuit's way
     for (const c of game.vehicles.list.slice()) {
       const along = (c.body.z - pb.z) * Math.cos(pb.heading) + (c.body.x - pb.x) * Math.sin(pb.heading);
-      if (c !== v && c.role !== 'police' && Math.abs(c.body.x - 500) < 14 && along > -20 && along < 60) game.vehicles.remove(c);
+      if (c !== v && !c.dead && c.role !== 'police' && Math.abs(c.body.x - 500) < 14 && along > -20 && along < 60) game.vehicles.remove(c);
     }
-    // a burning wreck at the causeway junction ahead, past the roadblock
-    const wreck = game.vehicles.spawn('sedan', 497, pb.z - 118, 0.9, { role: 'parked', paint: 0x3a3a44 });
-    game.vehicles.explode(wreck);
     game.police.setWanted(3);
     game.police.placeRoadblock();
     // the pack, flanking the Vireo: [ahead, right of it, turn, status]
@@ -327,7 +327,7 @@ const SCENES = {
     heli.aim.set(pb.x - 1, 0, pb.z);
     heli.update(0, { x: pb.x, z: pb.z });
     game.player.seatRider(bike);
-    game.cameraRig.yaw = pb.heading + 0.75;
+    game.cameraRig.yaw = pb.heading + 0.5;
     game.cameraRig.pitch = 0.2;
     game.cameraRig.orbitIdle = -10;
     for (let i = 0; i < 30; i += 1) game.cameraRig.update(STEP, { vehicle: bike, position: game.player.figure });

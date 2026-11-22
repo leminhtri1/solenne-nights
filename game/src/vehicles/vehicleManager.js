@@ -122,7 +122,7 @@ export class VehicleManager {
     v.smokeTimer -= dt;
     if (v.smokeTimer > 0) return;
     v.smokeTimer = 0.07;
-    this.game.particles.fire(v.body.x, v.body.y + 1.2, v.body.z);
+    this.game.particles.fire(v.body.x, v.body.y + 1.2, v.body.z, 1.7);
     this.game.particles.smoke(v.body.x, v.body.y + 2, v.body.z, 0x222222, 2);
   }
 

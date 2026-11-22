@@ -72,7 +72,7 @@ export class PostEffects {
     this.composite = this.material(COMPOSITE_FRAG, {
       scene: { value: null }, bloomA: { value: null }, bloomB: { value: null },
       bloomStrength: { value: 0.8 }, exposure: { value: 1.0 }, grade: { value: new THREE.Vector3(1, 1, 1) },
-      vignette: { value: 0.5 }, saturation: { value: 1.2 }, contrast: { value: 0.22 }, flash: { value: 0 },
+      vignette: { value: 0.5 }, saturation: { value: 1.32 }, contrast: { value: 0.26 }, flash: { value: 0 },
     });
     this.enabled = true;
   }

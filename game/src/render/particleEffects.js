@@ -132,8 +132,8 @@ export class ParticleEffects {
     this.soft.emit(x + this.r(0.4), 0.3, z + this.r(0.4), this.r(1), 0.5, this.r(1), 0xd9c7a0, 0.8, 0.7, 1.4);
   }
 
-  fire(x, y, z) {
-    this.hot.emit(x + this.r(0.5), y, z + this.r(0.5), this.r(0.4), 2 + this.rng() * 2, this.r(0.4), this.rng() < 0.5 ? 0xff5a10 : 0xffa020, 1.1, 0.45 + this.rng() * 0.25, -1.2);
+  fire(x, y, z, size = 1.1) {
+    this.hot.emit(x + this.r(0.5), y, z + this.r(0.5), this.r(0.4), 2 + this.rng() * 2, this.r(0.4), this.rng() < 0.5 ? 0xff5a10 : 0xffa020, size, 0.45 + this.rng() * 0.25, -1.2);
   }
 
   sparks(x, y, z, count = 14) {
