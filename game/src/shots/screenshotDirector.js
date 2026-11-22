@@ -171,7 +171,7 @@ const SCENES = {
   },
 
   async neon(game) {
-    setup(game, 22.6);
+    setup(game, 20.6);
     game.teleportPlayer(-402, -215, Math.PI);
     game.state.storyIndex = 3;
     game.state.money = 9640;
