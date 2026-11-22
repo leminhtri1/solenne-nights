@@ -8,7 +8,7 @@ import { clamp, damp, lerp, wrapAngle } from '../core/mathUtils.js';
 /** Chase distances the player cycles with V: low and close, standard, high and far. */
 export const CHASE_VIEWS = [
   { name: 'CLOSE CHASE', dist: 5.6, perSpeed: 0.014, height: 1.85, lookUp: 1.25, fov: 52, fovGain: 0.2 },
-  { name: 'STANDARD', dist: 6.4, perSpeed: 0.026, height: 2.1, lookUp: 1.3, fov: 56, fovGain: 0.24 },
+  { name: 'STANDARD', dist: 6.6, perSpeed: 0.028, height: 2.55, lookUp: 1.35, fov: 56, fovGain: 0.2 },
   { name: 'HIGH', dist: 10.5, perSpeed: 0.03, height: 4.4, lookUp: 1.1, fov: 58, fovGain: 0.24 },
 ];
 
@@ -26,7 +26,7 @@ export class CameraRig {
     this.cinematic = null;
     this.mode = 'foot';
     this.initialised = false;
-    this.viewIndex = 0;
+    this.viewIndex = 1;
   }
 
   /** Next chase view (V). Returns its name for a toast. */

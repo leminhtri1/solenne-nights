@@ -239,9 +239,11 @@ export function glowTexture() {
     const c = makeCanvas(128, 128);
     const g = c.getContext('2d');
     const grad = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    // a tight hot core with a short falloff, so a halo never reads as a fuzzy blob
     grad.addColorStop(0, 'rgba(255,255,255,1)');
-    grad.addColorStop(0.18, 'rgba(255,255,255,0.75)');
-    grad.addColorStop(0.45, 'rgba(255,255,255,0.22)');
+    grad.addColorStop(0.12, 'rgba(255,255,255,0.85)');
+    grad.addColorStop(0.3, 'rgba(255,255,255,0.2)');
+    grad.addColorStop(0.6, 'rgba(255,255,255,0.04)');
     grad.addColorStop(1, 'rgba(255,255,255,0)');
     g.fillStyle = grad;
     g.fillRect(0, 0, 128, 128);

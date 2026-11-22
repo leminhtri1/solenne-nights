@@ -3,7 +3,7 @@
 // Isla Verano with Villa Kessane and the Faro Verano lighthouse, the Puerto Azul marina with
 // moored yachts, and the gantry cranes and freighter of Port Sable.
 import * as THREE from 'three';
-import { MeshBuilder } from '../render/meshBuilder.js';
+import { MeshBuilder, CITY_TILE } from '../render/meshBuilder.js';
 import { groundTexture } from '../render/proceduralTextures.js';
 import { LAND, BEACH, ISLAND, BRIDGE, MARINA, WATER_LEVEL, ROAD_WIDTH, ISLAND_RING } from './cityLayout.js';
 
@@ -13,10 +13,10 @@ export class Landmarks {
     this.props = props;
     this.glow = glow;
     this.rng = rng;
-    this.solid = new MeshBuilder();
+    this.solid = new MeshBuilder({ tile: CITY_TILE });
     this.sand = new MeshBuilder();
     this.grass = new MeshBuilder();
-    this.wood = new MeshBuilder();
+    this.wood = new MeshBuilder({ tile: CITY_TILE });
     this.wheel = null;
   }
 
@@ -261,14 +261,12 @@ export class Landmarks {
 
   meshes() {
     const group = new THREE.Group();
-    const solid = new THREE.Mesh(this.solid.build(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7, metalness: 0.05 }));
-    solid.castShadow = solid.receiveShadow = true;
+    const solid = this.solid.buildTiles(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7, metalness: 0.05 }), { castShadow: true, receiveShadow: true });
     const sand = new THREE.Mesh(this.sand.build(), new THREE.MeshStandardMaterial({ map: groundTexture('sand'), roughness: 1 }));
     sand.receiveShadow = true;
     const grass = new THREE.Mesh(this.grass.build(), new THREE.MeshStandardMaterial({ map: groundTexture('grass'), roughness: 1 }));
     grass.receiveShadow = true;
-    const wood = new THREE.Mesh(this.wood.build(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85 }));
-    wood.castShadow = wood.receiveShadow = true;
+    const wood = this.wood.buildTiles(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85 }), { castShadow: true, receiveShadow: true });
     group.add(solid, sand, grass, wood, this.wheel);
     return group;
   }

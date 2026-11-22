@@ -8,14 +8,14 @@ const num = (a, b, t) => lerp(a, b, t);
 const col = (a, b, t) => mixHex(a, b, t);
 
 // [hour, value] keyframes, wrapping at 24.
-const SKY_TOP = [[0, 0x050816], [5, 0x0b1030], [6.5, 0x3a4f8f], [9, 0x2f7fd8], [16, 0x3a86d6], [18, 0x4a63a8], [19.2, 0x30306e], [20.4, 0x14133a], [22, 0x070a1f]];
-const SKY_HORIZON = [[0, 0x1a1440], [5, 0x2a2050], [6.5, 0xff9a6b], [9, 0xb8dcf5], [16, 0xcfe3f0], [18, 0xffb46a], [19.2, 0xff6f4e], [20.4, 0x7a3a78], [22, 0x2a1a50]];
-const FOG = [[0, 0x1c1638], [5, 0x2a2450], [6.5, 0xe7a284], [9, 0xb9d4e6], [16, 0xc9dbe6], [18, 0xf0a878], [19.2, 0xc9686e], [20.4, 0x4a2c62], [22, 0x231c45]];
+const SKY_TOP = [[0, 0x050816], [5, 0x0b1030], [6.5, 0x3a4f8f], [9, 0x1f72e0], [16, 0x2878dc], [18, 0x4a63b8], [19.2, 0x30306e], [20.4, 0x14133a], [22, 0x070a1f]];
+const SKY_HORIZON = [[0, 0x1a1440], [5, 0x2a2050], [6.5, 0xff9a6b], [9, 0x9fd0f4], [16, 0xb4dcf4], [18, 0xffb46a], [19.2, 0xff6f4e], [20.4, 0x7a3a78], [22, 0x2a1a50]];
+const FOG = [[0, 0x1c1638], [5, 0x2a2450], [6.5, 0xe7a284], [9, 0xaed2ee], [16, 0xbcd8ee], [18, 0xf0b48a], [19.2, 0xc9686e], [20.4, 0x4a2c62], [22, 0x231c45]];
 const SUN_COLOR = [[0, 0x8aa0d8], [5, 0x8aa0d8], [6.5, 0xffb68a], [9, 0xfff3e0], [16, 0xfff0d8], [18, 0xffb46e], [19.2, 0xff8a5a], [20.4, 0x9aa8e0], [22, 0x8aa0d8]];
-const SUN_POWER = [[0, 0.55], [5, 0.5], [6.5, 1.6], [9, 3.0], [16, 3.0], [18, 3.1], [19.2, 2.1], [20.4, 0.6], [22, 0.55]];
-const HEMI_POWER = [[0, 1.15], [5, 1.1], [6.5, 1.3], [9, 1.7], [16, 1.7], [18, 1.5], [19.2, 1.25], [20.4, 1.1], [22, 1.15]];
+const SUN_POWER = [[0, 0.85], [5, 0.75], [6.5, 1.6], [9, 3.0], [16, 3.0], [18, 3.1], [19.2, 2.1], [20.4, 0.85], [22, 0.85]];
+const HEMI_POWER = [[0, 1.6], [5, 1.5], [6.5, 1.4], [9, 1.7], [16, 1.7], [18, 1.55], [19.2, 1.4], [20.4, 1.5], [22, 1.6]];
 const HEMI_SKY = [[0, 0x4a4f9a], [6.5, 0xffc7a8], [9, 0xcfe6ff], [16, 0xd8e8ff], [18, 0xffcfa0], [19.2, 0xd98aa0], [20.4, 0x5a4a98], [22, 0x4a4f9a]];
-const FOG_FAR = [[0, 620], [6.5, 760], [9, 950], [16, 950], [18, 820], [19.2, 720], [20.4, 640], [22, 620]];
+const FOG_FAR = [[0, 900], [6.5, 1100], [9, 1500], [16, 1500], [18, 1350], [19.2, 1150], [20.4, 950], [22, 900]];
 
 export class SkyAndLighting {
   constructor(scene) {
@@ -91,7 +91,8 @@ export class SkyAndLighting {
     this.hemi.intensity = sampleKeys(HEMI_POWER, h, num);
     this.scene.fog.color.setHex(sampleKeys(FOG, h, col));
     this.scene.fog.far = sampleKeys(FOG_FAR, h, num);
-    this.scene.fog.near = this.scene.fog.far * 0.12;
+    // clear air near the camera; only the far skyline and sea fade
+    this.scene.fog.near = this.scene.fog.far * 0.42;
   }
 
   /** Keep the dome and the shadow camera centred on the action. */
@@ -131,9 +132,9 @@ void main() {
   // sun disc and halo
   float s = max(dot(d, normalize(sunDir)), 0.0);
   float sunVis = 1.0 - night;
-  c += sunColor * (pow(s, 900.0) * 6.0 + pow(s, 40.0) * 0.55 + pow(s, 6.0) * 0.25) * sunVis;
+  c += sunColor * (pow(s, 900.0) * 2.2 + pow(s, 60.0) * 0.3 + pow(s, 8.0) * 0.08) * sunVis;
   // horizon warm band
-  c += horizonColor * 0.25 * exp(-abs(h) * 14.0);
+  c += horizonColor * 0.12 * exp(-abs(h) * 18.0);
   // clouds: soft streaks lit by the sun from below at sunset
   vec2 uv = d.xz / max(0.08, d.y + 0.12) * 0.9 + vec2(time * 0.004, 0.0);
   float cl = smoothstep(0.52, 0.85, fbm(uv * 1.4)) * smoothstep(0.0, 0.25, h);

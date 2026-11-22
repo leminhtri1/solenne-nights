@@ -12,10 +12,12 @@ void main() {
   vec4 mv = modelViewMatrix * vec4(position, 1.0);
   gl_Position = projectionMatrix * mv;
   float depth = -mv.z;
-  gl_PointSize = min(size * scale / max(depth, 0.1), 360.0);
+  // in daylight a halo is a small hot core; after dusk it opens up a little
+  float dayScale = mix(0.45, 1.0, night);
+  gl_PointSize = min(size * dayScale * scale / max(depth, 0.1), 120.0);
   float fog = smoothstep(fogNear, fogFar * 1.25, depth);
   // fade halos that pass right by the camera instead of letting them fill the screen
-  vAlpha = mix(1.0, night, nightOnly) * (1.0 - fog * 0.85) * smoothstep(1.5, 9.0, depth);
+  vAlpha = mix(1.0, night, nightOnly) * mix(0.7, 1.0, night) * (1.0 - fog * 0.85) * smoothstep(3.0, 14.0, depth);
   vColor = tint;
 }`;
 const FRAG = /* glsl */ `

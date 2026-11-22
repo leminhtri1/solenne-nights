@@ -1,6 +1,7 @@
 // Collects many small shapes (boxes, cylinders, any BufferGeometry) with per-vertex colours
-// into one BufferGeometry, so a whole city block, a car body or a row of palms is a single
-// draw call.
+// into merged BufferGeometry. Untiled, everything becomes one draw call. Tiled (`{ tile: m }`),
+// each shape lands in the square tile its first vertex falls in and `buildTiles` makes one mesh
+// per tile, so the camera and the sun's shadow frustum skip whole districts out of view.
 import * as THREE from 'three';
 
 const tmpV = new THREE.Vector3();
@@ -8,15 +9,36 @@ const tmpN = new THREE.Vector3();
 const tmpColor = new THREE.Color();
 const normalMatrix = new THREE.Matrix3();
 
+function emptyBucket() { return { pos: [], nor: [], uv: [], col: [] }; }
+
+/** Tile size in metres for the city's static meshes (Solenne is about 1.4 km across). */
+export const CITY_TILE = 160;
+
 export class MeshBuilder {
-  constructor() {
-    this.pos = [];
-    this.nor = [];
-    this.uv = [];
-    this.col = [];
+  constructor({ tile = 0 } = {}) {
+    this.tile = tile;
+    this.buckets = new Map();
+    this.whole = emptyBucket();
+    this.last = this.whole;
   }
 
-  get vertexCount() { return this.pos.length / 3; }
+  /** Vertex arrays of the bucket written last, for callers that reshape a shape just added. */
+  get pos() { return this.last.pos; }
+  get nor() { return this.last.nor; }
+
+  get vertexCount() {
+    let n = this.whole.pos.length;
+    for (const b of this.buckets.values()) n += b.pos.length;
+    return n / 3;
+  }
+
+  bucketAt(x, z) {
+    if (!this.tile) return this.whole;
+    const key = `${Math.floor(x / this.tile)}:${Math.floor(z / this.tile)}`;
+    let b = this.buckets.get(key);
+    if (!b) { b = emptyBucket(); this.buckets.set(key, b); }
+    return b;
+  }
 
   /** Append one triangle-list geometry transformed by `matrix`, tinted `color`. */
   addGeometry(geometry, matrix, color = 0xffffff, uvTransform = null) {
@@ -26,16 +48,19 @@ export class MeshBuilder {
     const uv = geo.attributes.uv;
     normalMatrix.getNormalMatrix(matrix);
     tmpColor.set(color);
+    tmpV.fromBufferAttribute(p, 0).applyMatrix4(matrix);
+    const out = this.bucketAt(tmpV.x, tmpV.z);
+    this.last = out;
     for (let i = 0; i < p.count; i += 1) {
       tmpV.fromBufferAttribute(p, i).applyMatrix4(matrix);
-      this.pos.push(tmpV.x, tmpV.y, tmpV.z);
+      out.pos.push(tmpV.x, tmpV.y, tmpV.z);
       tmpN.fromBufferAttribute(n, i).applyMatrix3(normalMatrix).normalize();
-      this.nor.push(tmpN.x, tmpN.y, tmpN.z);
+      out.nor.push(tmpN.x, tmpN.y, tmpN.z);
       let u = uv ? uv.getX(i) : 0;
       let v = uv ? uv.getY(i) : 0;
       if (uvTransform) [u, v] = uvTransform(u, v, tmpV, tmpN);
-      this.uv.push(u, v);
-      this.col.push(tmpColor.r, tmpColor.g, tmpColor.b);
+      out.uv.push(u, v);
+      out.col.push(tmpColor.r, tmpColor.g, tmpColor.b);
     }
     if (geo !== geometry) geo.dispose();
   }
@@ -70,16 +95,40 @@ export class MeshBuilder {
     this.addGeometry(geo, m, color);
   }
 
+  /** Everything collected, as one geometry (tiles included). */
   build() {
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(this.pos, 3));
-    g.setAttribute('normal', new THREE.Float32BufferAttribute(this.nor, 3));
-    g.setAttribute('uv', new THREE.Float32BufferAttribute(this.uv, 2));
-    g.setAttribute('color', new THREE.Float32BufferAttribute(this.col, 3));
-    g.computeBoundingSphere();
-    g.computeBoundingBox();
-    return g;
+    if (!this.buckets.size) return bucketGeometry(this.whole);
+    const all = emptyBucket();
+    for (const b of [this.whole, ...this.buckets.values()]) {
+      for (const k of ['pos', 'nor', 'uv', 'col']) for (let i = 0; i < b[k].length; i += 1) all[k].push(b[k][i]);
+    }
+    return bucketGeometry(all);
   }
+
+  /** One mesh per tile (plus one for untiled shapes), sharing `material`. */
+  buildTiles(material, { castShadow = false, receiveShadow = false } = {}) {
+    const group = new THREE.Group();
+    for (const b of [this.whole, ...this.buckets.values()]) {
+      if (!b.pos.length) continue;
+      const mesh = new THREE.Mesh(bucketGeometry(b), material);
+      mesh.castShadow = castShadow;
+      mesh.receiveShadow = receiveShadow;
+      mesh.matrixAutoUpdate = false;
+      group.add(mesh);
+    }
+    return group;
+  }
+}
+
+function bucketGeometry(b) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(b.pos, 3));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(b.nor, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(b.uv, 2));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(b.col, 3));
+  g.computeBoundingSphere();
+  g.computeBoundingBox();
+  return g;
 }
 
 export const UNIT_BOX = new THREE.BoxGeometry(1, 1, 1);

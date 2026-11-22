@@ -53,14 +53,16 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #07060f; col
 .pp-more { margin-top: 3px; padding-top: 4px; border-top: 1px solid rgba(255, 255, 255, 0.12); font-size: 12px; font-weight: 900; letter-spacing: 1.5px; color: #ff8a9c; text-align: center; }
 
 /* WANTED banner: drops in at the top centre when the level rises */
-#wanted-banner { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); min-width: 380px; padding: 6px 28px 9px; text-align: center; border-radius: 14px;
-  background: linear-gradient(90deg, rgba(255, 30, 60, 0.82), rgba(20, 8, 30, 0.86) 30%, rgba(20, 8, 30, 0.86) 70%, rgba(40, 80, 255, 0.82));
-  border: 2px solid rgba(255, 255, 255, 0.55); box-shadow: 0 0 28px rgba(255, 40, 80, 0.7), 0 0 48px rgba(40, 90, 255, 0.45); animation: wbpulse 0.45s infinite alternate; }
-.wb-title { font-family: Impact, "Arial Black", sans-serif; font-size: 44px; letter-spacing: 10px; line-height: 1.05; color: #fff; text-shadow: 0 0 16px #ff2a4a, 0 3px 0 #50000f; }
-.wb-stars { font-size: 34px; letter-spacing: 6px; line-height: 1; color: rgba(255, 255, 255, 0.25); }
-.wb-stars b { color: var(--gold); font-weight: 400; text-shadow: 0 0 14px #ffb000, 0 2px 3px #000; }
-.wb-sub { margin-top: 3px; font-size: 13px; font-weight: 900; letter-spacing: 2.5px; text-transform: uppercase; color: #ffe1e6; }
-@keyframes wbpulse { from { box-shadow: 0 0 30px rgba(255, 40, 80, 0.85), 0 0 10px rgba(40, 90, 255, 0.3); } to { box-shadow: 0 0 10px rgba(255, 40, 80, 0.3), 0 0 40px rgba(40, 90, 255, 0.9); } }
+/* a compact plate: WANTED and the stars on one line, what the police may now do beneath */
+#wanted-banner { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); display: grid; grid-template-columns: auto auto; align-items: center; column-gap: 12px;
+  padding: 3px 16px 5px; border-radius: 10px; white-space: nowrap;
+  background: linear-gradient(90deg, rgba(255, 30, 60, 0.78), rgba(20, 8, 30, 0.8) 28%, rgba(20, 8, 30, 0.8) 72%, rgba(40, 80, 255, 0.78));
+  border: 1.5px solid rgba(255, 255, 255, 0.5); box-shadow: 0 0 14px rgba(255, 40, 80, 0.5); animation: wbpulse 0.45s infinite alternate; }
+.wb-title { font-family: Impact, "Arial Black", sans-serif; font-size: 26px; letter-spacing: 5px; line-height: 1.1; color: #fff; text-shadow: 0 0 8px #ff2a4a, 0 2px 0 #50000f; }
+.wb-stars { font-size: 22px; letter-spacing: 3px; line-height: 1; color: rgba(255, 255, 255, 0.25); }
+.wb-stars b { color: var(--gold); font-weight: 400; text-shadow: 0 0 8px #ffb000, 0 2px 3px #000; }
+.wb-sub { grid-column: 1 / 3; text-align: center; font-size: 10.5px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; color: #ffe1e6; }
+@keyframes wbpulse { from { box-shadow: 0 0 14px rgba(255, 40, 80, 0.7), 0 0 4px rgba(40, 90, 255, 0.3); } to { box-shadow: 0 0 4px rgba(255, 40, 80, 0.3), 0 0 16px rgba(40, 90, 255, 0.8); } }
 
 /* status column, top right */
 #status-panel { position: absolute; right: 20px; top: 14px; width: 300px; text-align: right; }

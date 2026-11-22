@@ -3,7 +3,7 @@
 // Beach, bungalows in Coral Flats, warehouses at Port Sable. Buildings are merged per facade
 // style and per chunk; every one also becomes a collision box.
 import * as THREE from 'three';
-import { MeshBuilder } from '../render/meshBuilder.js';
+import { MeshBuilder, CITY_TILE } from '../render/meshBuilder.js';
 import { FACADE_STYLES, facadeTextures, sidewalkTexture, groundTexture } from '../render/proceduralTextures.js';
 import { createRandom, hash2 } from '../core/seededRandom.js';
 import {
@@ -28,9 +28,9 @@ export class CityGenerator {
     this.glow = glow;
     this.rng = createRandom(seed);
     this.chunks = new Map();
-    this.base = new MeshBuilder();
-    this.lots = { grass: new MeshBuilder(), plaza: new MeshBuilder(), dirt: new MeshBuilder() };
-    this.detail = new MeshBuilder();
+    this.base = new MeshBuilder({ tile: CITY_TILE });
+    this.lots = { grass: new MeshBuilder({ tile: CITY_TILE }), plaza: new MeshBuilder({ tile: CITY_TILE }), dirt: new MeshBuilder({ tile: CITY_TILE }) };
+    this.detail = new MeshBuilder({ tile: CITY_TILE });
     this.buildingCount = 0;
     this.neonIndex = 0;
     this.plane = new THREE.PlaneGeometry(1, 1);
@@ -38,7 +38,7 @@ export class CityGenerator {
   }
 
   chunkBuilder(style, x, z) {
-    const key = `${style}:${Math.floor((x + 800) / 400)}:${Math.floor((z + 800) / 400)}`;
+    const key = `${style}:${Math.floor(x / CITY_TILE)}:${Math.floor(z / CITY_TILE)}`;
     if (!this.chunks.has(key)) this.chunks.set(key, { style, builder: new MeshBuilder() });
     return this.chunks.get(key).builder;
   }
@@ -350,19 +350,12 @@ export class CityGenerator {
       mesh.receiveShadow = true;
       group.add(mesh);
     }
-    const base = new THREE.Mesh(this.base.build(), new THREE.MeshStandardMaterial({ map: sidewalkTexture(), roughness: 0.9 }));
-    base.receiveShadow = true;
-    group.add(base);
+    group.add(this.base.buildTiles(new THREE.MeshStandardMaterial({ map: sidewalkTexture(), roughness: 0.9 }), { receiveShadow: true }));
     for (const [kind, builder] of Object.entries(this.lots)) {
       if (!builder.vertexCount) continue;
-      const lot = new THREE.Mesh(builder.build(), new THREE.MeshStandardMaterial({ map: groundTexture(kind), roughness: 0.95 }));
-      lot.receiveShadow = true;
-      group.add(lot);
+      group.add(builder.buildTiles(new THREE.MeshStandardMaterial({ map: groundTexture(kind), roughness: 0.95 }), { receiveShadow: true }));
     }
-    const detail = new THREE.Mesh(this.detail.build(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75 }));
-    detail.castShadow = true;
-    detail.receiveShadow = true;
-    group.add(detail);
+    group.add(this.detail.buildTiles(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75 }), { castShadow: true, receiveShadow: true }));
     return group;
   }
 

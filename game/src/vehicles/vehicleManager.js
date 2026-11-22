@@ -145,7 +145,7 @@ export class VehicleManager {
 
   /** Light halos for every vehicle near the camera. */
   pushGlows(glow, camPos, night, clock) {
-    this.beamMaterial.opacity = night * 0.32;
+    this.beamMaterial.opacity = night * 0.2;
     for (const v of this.list) {
       const b = v.body;
       if (v.dead) continue;

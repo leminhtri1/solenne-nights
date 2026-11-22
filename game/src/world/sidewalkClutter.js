@@ -5,7 +5,7 @@
 // the carts and shelters add warm lights that come up at night. Pedestrians walk the lane
 // between the kerb row and the shop-front row.
 import * as THREE from 'three';
-import { MeshBuilder } from '../render/meshBuilder.js';
+import { MeshBuilder, CITY_TILE } from '../render/meshBuilder.js';
 import { GRID_LINES, GRID_COUNT, ROAD_WIDTH, PARK_BLOCKS, districtAt, blockOfPlace } from './cityLayout.js';
 
 const KERB = ROAD_WIDTH / 2 + 1.0;
@@ -28,7 +28,7 @@ export class SidewalkClutter {
   constructor({ glow, rng }) {
     this.glow = glow;
     this.rng = rng;
-    this.b = new MeshBuilder();
+    this.b = new MeshBuilder({ tile: CITY_TILE });
     this.count = 0;
   }
 
@@ -64,10 +64,7 @@ export class SidewalkClutter {
         });
       }
     }
-    const mesh = new THREE.Mesh(this.b.build(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7, metalness: 0.1 }));
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    return mesh;
+    return this.b.buildTiles(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7, metalness: 0.1 }), { castShadow: true, receiveShadow: true });
   }
 
   place(kind, x, z, yaw) {

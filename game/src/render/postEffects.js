@@ -1,6 +1,8 @@
-// Post-processing: the scene renders into an HDR target, a bright pass and a two-step
-// separable blur make the bloom that neon, headlights and police bars bleed into, and a final
-// pass adds it back with ACES tone mapping, a warm or cool grade, vignette and gamma.
+// Post-processing: the scene renders into an HDR target; a high-threshold bright pass and a
+// small separable blur give a tight bloom to the only things that should glow (neon, light
+// bars, headlights, muzzle flashes), and a final pass adds it back with ACES tone mapping, a
+// light grade, a gentle contrast curve, a soft vignette and gamma. No haze or motion blur: the
+// picture stays crisp.
 import * as THREE from 'three';
 
 const QUAD_VERT = /* glsl */ `varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
@@ -28,8 +30,7 @@ void main() {
 const COMPOSITE_FRAG = /* glsl */ `
 uniform sampler2D scene; uniform sampler2D bloomA; uniform sampler2D bloomB;
 uniform float bloomStrength; uniform float exposure; uniform vec3 grade; uniform float vignette;
-uniform float saturation; uniform float flash; uniform float speedBlur; uniform float haze;
-uniform vec3 hazeColor; varying vec2 vUv;
+uniform float saturation; uniform float contrast; uniform float flash; varying vec2 vUv;
 vec3 aces(vec3 x) {
   const float a = 2.51; const float b = 0.03; const float c = 2.43; const float d = 0.59; const float e = 0.14;
   return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
@@ -39,23 +40,15 @@ vec3 toSRGB(vec3 c) {
 }
 void main() {
   vec3 c = texture2D(scene, vUv).rgb;
-  // speed: streak the frame toward its edges along rays from the centre
-  vec2 fromC = vUv - vec2(0.5, 0.48);
-  float edge = smoothstep(0.3, 0.78, length(fromC * vec2(1.6, 1.0)));
-  float amt = speedBlur * edge;
-  if (amt > 0.001) {
-    vec3 acc = c;
-    for (int i = 1; i <= 6; i++) acc += texture2D(scene, vUv - fromC * amt * 0.015 * float(i)).rgb;
-    c = acc / 7.0;
-  }
-  // golden-hour haze: warm light scattered over the far, upper part of the frame
-  c += hazeColor * haze * smoothstep(0.15, 0.85, vUv.y) * 0.35;
-  vec3 bloom = texture2D(bloomA, vUv).rgb * 0.6 + texture2D(bloomB, vUv).rgb * 0.9;
+  vec3 bloom = texture2D(bloomA, vUv).rgb * 0.8 + texture2D(bloomB, vUv).rgb * 0.35;
   c += bloom * bloomStrength;
   c *= exposure * grade;
   c = aces(c);
   float l = dot(c, vec3(0.299, 0.587, 0.114));
   c = mix(vec3(l), c, saturation);
+  // S-curve around mid grey: deeper shadows, cleaner highlights
+  c = clamp(c, 0.0, 1.0);
+  c = mix(c, c * c * (3.0 - 2.0 * c), contrast);
   vec2 q = vUv - 0.5;
   c *= 1.0 - dot(q, q) * vignette;
   c += vec3(1.0, 0.95, 0.9) * flash;
@@ -74,13 +67,12 @@ export class PostEffects {
     this.quad.frustumCulled = false;
     this.quadScene = new THREE.Scene();
     this.quadScene.add(this.quad);
-    this.bright = this.material(BRIGHT_FRAG, { src: { value: null }, threshold: { value: 0.9 } });
+    this.bright = this.material(BRIGHT_FRAG, { src: { value: null }, threshold: { value: 1.6 } });
     this.blur = this.material(BLUR_FRAG, { src: { value: null }, dir: { value: new THREE.Vector2() } });
     this.composite = this.material(COMPOSITE_FRAG, {
       scene: { value: null }, bloomA: { value: null }, bloomB: { value: null },
       bloomStrength: { value: 0.8 }, exposure: { value: 1.0 }, grade: { value: new THREE.Vector3(1, 1, 1) },
-      vignette: { value: 1.1 }, saturation: { value: 1.12 }, flash: { value: 0 },
-      speedBlur: { value: 0 }, haze: { value: 0 }, hazeColor: { value: new THREE.Vector3(1.0, 0.62, 0.32) },
+      vignette: { value: 0.5 }, saturation: { value: 1.2 }, contrast: { value: 0.22 }, flash: { value: 0 },
     });
     this.enabled = true;
   }
@@ -102,19 +94,13 @@ export class PostEffects {
     this.renderer.render(this.quadScene, this.camera);
   }
 
-  /** Grade presets: warm gold at sunset, cool magenta at night. */
+  /** Grade presets: a touch of gold at sunset, cool blue-magenta at night. Bloom stays tight. */
   setGrade(night, golden) {
     const g = this.composite.uniforms.grade.value;
-    g.set(1 + golden * 0.06 - night * 0.04, 1 - night * 0.02, 1 - golden * 0.06 + night * 0.08);
-    this.composite.uniforms.bloomStrength.value = 0.55 + night * 0.4 + golden * 0.35;
-    this.composite.uniforms.exposure.value = 1.0 + night * 0.15;
-    this.composite.uniforms.haze.value = golden * 0.4;
-    this.bright.uniforms.threshold.value = 0.95 - night * 0.15 - golden * 0.12;
-  }
-
-  /** Radial motion streaks, 0 at cruising speed up to 1 flat out. */
-  setSpeed(amount) {
-    this.composite.uniforms.speedBlur.value = Math.max(0, Math.min(1, amount));
+    g.set(1 + golden * 0.03 - night * 0.03, 1 - night * 0.01, 1 - golden * 0.04 + night * 0.07);
+    this.composite.uniforms.bloomStrength.value = 0.22 + night * 0.33;
+    this.composite.uniforms.exposure.value = 1.05 + night * 0.5;
+    this.bright.uniforms.threshold.value = 1.6 - night * 0.45;
   }
 
   render(scene, camera) {
@@ -138,7 +124,7 @@ export class PostEffects {
     };
     blurInto(this.half[0], this.half[1], this.half[0], this.w >> 1, this.h >> 1, 1.0);
     this.blur.uniforms.src.value = this.half[0].texture;
-    blurInto(this.half[0], this.quarter[1], this.quarter[0], this.w >> 2, this.h >> 2, 2.2);
+    blurInto(this.half[0], this.quarter[1], this.quarter[0], this.w >> 2, this.h >> 2, 1.4);
     const u = this.composite.uniforms;
     u.scene.value = this.sceneTarget.texture;
     u.bloomA.value = this.half[0].texture;

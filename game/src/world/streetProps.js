@@ -2,7 +2,7 @@
 // with glowing heads and pools of light on the asphalt, billboards for the city's brands and
 // neon signs. Each kind is merged into a handful of meshes for the whole city.
 import * as THREE from 'three';
-import { MeshBuilder } from '../render/meshBuilder.js';
+import { MeshBuilder, CITY_TILE } from '../render/meshBuilder.js';
 import { palmLeafTexture, glowTexture, billboardTexture, neonSignTexture, BILLBOARD_ADS } from '../render/proceduralTextures.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
@@ -12,10 +12,10 @@ export class StreetProps {
     this.collision = collision;
     this.glow = glow;
     this.rng = rng;
-    this.trunks = new MeshBuilder();
-    this.leaves = new MeshBuilder();
-    this.posts = new MeshBuilder();
-    this.pools = new MeshBuilder();
+    this.trunks = new MeshBuilder({ tile: CITY_TILE });
+    this.leaves = new MeshBuilder({ tile: CITY_TILE });
+    this.posts = new MeshBuilder({ tile: CITY_TILE });
+    this.pools = new MeshBuilder({ tile: CITY_TILE });
     this.signs = [];
     this.blades = [];
     this.billboards = [];
@@ -132,20 +132,17 @@ export class StreetProps {
   /** Turn everything collected into meshes. Returns the group plus materials that react to night. */
   build() {
     const group = new THREE.Group();
-    const trunk = new THREE.Mesh(this.trunks.build(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 }));
-    trunk.castShadow = true;
+    const trunk = this.trunks.buildTiles(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 }), { castShadow: true });
     const leafMat = new THREE.MeshStandardMaterial({
       map: palmLeafTexture(), vertexColors: true, alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.9,
     });
-    const leaves = new THREE.Mesh(this.leaves.build(), leafMat);
-    leaves.castShadow = true;
-    const posts = new THREE.Mesh(this.posts.build(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55, metalness: 0.4 }));
-    posts.castShadow = true;
+    const leaves = this.leaves.buildTiles(leafMat, { castShadow: true });
+    const posts = this.posts.buildTiles(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55, metalness: 0.4 }), { castShadow: true });
     this.poolMaterial = new THREE.MeshBasicMaterial({
       map: glowTexture(), vertexColors: true, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false,
     });
-    const pools = new THREE.Mesh(this.pools.build(), this.poolMaterial);
-    pools.renderOrder = 2;
+    const pools = this.pools.buildTiles(this.poolMaterial);
+    for (const m of pools.children) m.renderOrder = 2;
     group.add(trunk, leaves, posts, pools);
 
     const plane = new THREE.PlaneGeometry(1, 1);
@@ -182,7 +179,7 @@ export class StreetProps {
 
   /** Night factor 0..1: light pools and billboard lamps come up after dusk. */
   setNight(night) {
-    if (this.poolMaterial) this.poolMaterial.opacity = 0.34 * night;
+    if (this.poolMaterial) this.poolMaterial.opacity = 0.45 * night;
     for (const m of this.billboardMaterials || []) m.emissiveIntensity = 0.55 * night;
     for (const m of this.neonMaterials || []) m.color.setScalar(0.8 + 0.9 * night);
   }

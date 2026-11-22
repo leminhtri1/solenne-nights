@@ -68,15 +68,26 @@ function finalFrames(game, count = 2, { wantedBanner = false } = {}) {
   for (let i = 0; i < count; i += 1) game.frame(0);
 }
 
+/** Put a body `along` metres ahead of and `side` metres to the right of the lead body. */
+function placeBeside(body, lead, along, side, turn = 0) {
+  const fx = Math.sin(lead.heading), fz = Math.cos(lead.heading);
+  body.x = lead.x + fx * along - fz * side;
+  body.z = lead.z + fz * along + fx * side;
+  body.heading = lead.heading + turn;
+  body.setVelocityForward(lead.speed);
+}
+
 const SCENES = {
   async chase(game) {
-    setup(game, 18.72);
-    game.teleportPlayer(300, -295, Math.PI / 2);
-    const v = game.vehicles.spawn('vireo', 300, -295, Math.PI / 2, { role: 'mission', paint: 0xff2d55 });
+    // late afternoon on Ocean Parade (the beach avenue, x = 500), northbound toward the causeway
+    setup(game, 17.1);
+    const heading = Math.PI;
+    game.teleportPlayer(505, -88, heading);
+    const v = game.vehicles.spawn('vireo', 505, -88, heading, { role: 'mission', paint: 0xff2d55 });
     v.body.invulnerable = true;
     Object.assign(tuneOf(v.body), { engine: 2, tyres: 1, armour: 2 });
     game.player.enterVehicle(v, false);
-    v.body.setVelocityForward(37);
+    v.body.setVelocityForward(36);
     game.state.storyIndex = 5;
     game.state.money = 48210;
     game.state.respect = 820;
@@ -91,69 +102,70 @@ const SCENES = {
     game.missions.cpIndex = 0;
     game.missions.timer = 31;
     game.police.setWanted(2);
-    addUnit(game, 'patrol', 299, -302.5, Math.PI / 2 + 0.03, 39);
-    addUnit(game, 'patrol', 297, -289.5, Math.PI / 2 - 0.04, 39);
-    addUnit(game, 'patrol', 250, -303, Math.PI / 2, 38);
-    addUnit(game, 'patrol', 240, -293, Math.PI / 2, 38);
-    addUnit(game, 'patrol', 205, -298, Math.PI / 2, 38);
-    addUnit(game, 'swat', 225, -297, Math.PI / 2, 34);
+    // clear the avenue ahead of the run so the pack has room
+    for (const c of game.vehicles.list.slice()) if (c !== v && Math.abs(c.body.x - 500) < 12 && c.body.z < -70 && c.body.z > -300) game.vehicles.remove(c);
+    for (let k = 0; k < 4; k += 1) addUnit(game, 'patrol', 500, -50 + k * 8, heading, 36);
     game.police.heli.activate(game.player.x, game.player.z);
-    game.police.heli.x = 360; game.police.heli.z = -330; game.police.heli.y = 40;
-    game.police.heli.orbit = 2.2;
-    game.autopilot = laneAutopilot(v, -295, Math.PI / 2);
-    simulate(game, 1.6);
-    game.police.placeRoadblock();
-    simulate(game, 0.5, 0.5);
+    game.autopilot = (() => { const steer = laneAutopilot(v, null, heading); return () => { steer(); v.body.x += (505 - v.body.x) * 0.1; }; })();
+    simulate(game, 1.4);
     game.autopilot = null;
-    // the pursuit is pulled into a tight pack for the frame (their AI holds these slots in play)
     const pb = game.player.vehicle.body;
-    pb.setVelocityForward(47);
-    const pack = game.police.units.filter((u) => u.kind === 'patrol' || u.kind === 'swat');
-    const slots = [[1.2, -298.6, 0.1, 'RAMMING'], [4.2, -291.4, -0.07, 'FIRING'], [10, -304.2, 0.04, 'PURSUIT'], [17, -291.2, -0.03, 'FIRING'], [-14, -303, 0.03, 'PURSUIT'], [-24, -296.5, 0, 'PURSUIT']];
+    pb.x = 505; pb.heading = heading;
+    pb.setVelocityForward(38);
+    // civilian traffic clears out of the pursuit's way
+    for (const c of game.vehicles.list.slice()) {
+      const along = (c.body.z - pb.z) * Math.cos(pb.heading) + (c.body.x - pb.x) * Math.sin(pb.heading);
+      if (c !== v && c.role !== 'police' && Math.abs(c.body.x - 500) < 14 && along > -20 && along < 60) game.vehicles.remove(c);
+    }
+    // a burning wreck at the causeway junction ahead, past the roadblock
+    const wreck = game.vehicles.spawn('sedan', 497, pb.z - 118, 0.9, { role: 'parked', paint: 0x3a3a44 });
+    game.vehicles.explode(wreck);
+    game.police.setWanted(3);
+    game.police.placeRoadblock();
+    // the pack, flanking the Vireo: [ahead, right of it, turn, status]
+    const pack = game.police.units.filter((u) => u.kind === 'patrol');
+    const slots = [[4.2, -4.9, 0.07, 'RAMMING'], [11, -9.6, -0.03, 'FIRING'], [-1.5, -10.4, 0.02, 'PURSUIT'], [18, -4.4, 0.02, 'FIRING']];
     pack.forEach((u, k) => {
-      const slot = slots[k];
-      if (!slot) return;
-      const b = u.vehicle.body;
-      b.x = pb.x + slot[0]; b.z = slot[1]; b.heading = pb.heading + slot[2];
-      b.setVelocityForward(pb.speed);
-      u.status = slot[3];
+      if (!slots[k]) return;
+      placeBeside(u.vehicle.body, pb, slots[k][0], slots[k][1], slots[k][2]);
+      u.status = slots[k][3];
       game.vehicles.syncMesh(u.vehicle);
     });
-    game.police.setWanted(3);
-    // the last fraction of a second of the chase: window fire, scraping sparks, tyre smoke
     const shooters = pack.filter((u) => u.status === 'FIRING');
-    for (let i = 0; i < 14; i += 1) {
-      for (const u of pack) { u.vehicle.body.setVelocityForward(pb.speed); }
-      if (i % 5 === 0) for (const u of shooters) { u.fireCooldown = 0; game.police.windowFire(u, 8, 0); }
-      const ram = pack[0].vehicle.body;
-      game.particles.sparks(pb.x - Math.sin(pb.heading) * 1.6 + Math.cos(pb.heading) * 1.0, 0.7, (pb.z + ram.z) / 2 + 0.6, 4);
-      const back = v.def.length * 0.36;
-      for (const sd of [-1, 1]) game.particles.tyreSmoke(pb.x - Math.sin(pb.heading) * back, pb.z + sd * 0.9);
+    for (let i = 0; i < 10; i += 1) {
+      for (const u of pack) u.vehicle.body.setVelocityForward(pb.speed);
+      if (i % 4 === 0) for (const u of shooters) { u.fireCooldown = 0; game.police.windowFire(u, 9, 0); }
       game.step(STEP);
     }
     pack.forEach((u, k) => { if (slots[k]) u.status = slots[k][3]; });
     // people on both sidewalks ahead duck or scatter as the pursuit tears past
-    const bystanders = game.peds.people.filter((q) => !q.dead).slice(0, 16);
+    const fx = Math.sin(pb.heading), fz = Math.cos(pb.heading);
+    const bystanders = game.peds.people.filter((q) => !q.dead).slice(0, 18);
     bystanders.forEach((q, k) => {
-      const right = k % 2 === 0;
-      q.fig.x = pb.x + 14 + k * 4.2 + (k % 3);
-      q.fig.z = right ? -287.2 - (k % 4) * 0.6 : -312.8 + (k % 4) * 0.6;
+      const east = k % 2 === 0;
+      const along = 16 + k * 4.4 + (k % 3);
+      q.fig.x = east ? 513.5 + (k % 4) * 0.7 : 487 - (k % 4) * 0.6;
+      q.fig.z = pb.z + fz * along;
       q.fig.y = 0.2; q.fig.visible = true;
       q.state = k % 3 === 0 ? 'cower' : 'flee';
       q.fear = 8;
-      q.threat = { x: pb.x, z: -300 };
-      q.fig.yaw = right ? 0.4 : Math.PI - 0.4;
+      q.threat = { x: 500, z: pb.z };
+      q.fig.yaw = east ? Math.PI / 2 + 0.3 : -Math.PI / 2 - 0.3;
     });
     for (let i = 0; i < 6; i += 1) game.peds.update(STEP);
+    // HALO-1 low over the avenue ahead, its beam on the Vireo
     const heli = game.police.heli;
-    heli.x = game.player.x + 24; heli.z = game.player.z + 5.5; heli.y = 8.6;
-    heli.heading = Math.PI + 0.45;
-    heli.aim.set(game.player.x + 5, 0, game.player.z - 1);
-    heli.update(0, { x: game.player.x, z: game.player.z });
-    for (let i = 0; i < 20; i += 1) game.cameraRig.update(STEP, { vehicle: v, position: game.player.figure });
-    game.dialogue.pin('juno', 'Cops on the causeway! Stay on the gas, the lighthouse is past the bridge!', game.cast);
+    heli.x = pb.x + 7; heli.z = pb.z + fz * 36; heli.y = 12.5;
+    heli.heading = -Math.PI / 2 + 0.5;
+    heli.aim.set(pb.x + fx * 1.5, 0, pb.z + fz * 1.5);
+    heli.update(0, { x: pb.x, z: pb.z });
+    game.cameraRig.snapBehind(pb.heading);
+    game.cameraRig.pitch = 0.12;
+    for (let i = 0; i < 30; i += 1) game.cameraRig.update(STEP, { vehicle: v, position: game.player.figure });
+    game.dialogue.pin('juno', 'Cops on Ocean Parade! Stay on the gas, the causeway is two blocks up!', game.cast);
     game.audio.radio = { nowPlaying: { station: 'SOLAR FM 101.3', title: 'Causeway Lights', artist: 'VHS Lagoon', art: 'linear-gradient(135deg,#ff4fa3,#ffb347)' } };
     game.cameraRig.shake = 0;
+    void fx;
     finalFrames(game, 2, { wantedBanner: true });
   },
 
@@ -198,16 +210,16 @@ const SCENES = {
     // HALO-1 lights up the block; bystanders on the east sidewalk run back past the camera
     const heli = game.police.heli;
     heli.activate(p.x, p.z);
-    heli.x = -396; heli.z = -262; heli.y = 26; heli.heading = Math.PI / 2 + 0.5;
-    heli.aim.set(-402, 0, -229);
+    heli.x = -399; heli.z = -268; heli.y = 17; heli.heading = -0.5;
+    heli.aim.set(-404, 0, -232);
     const runners = game.peds.people.filter((q) => !q.dead).slice(0, 6);
     runners.forEach((q, k) => {
       q.fig.x = -391.5 - (k % 3) * 1.6; q.fig.z = -219 - k * 2.6; q.fig.visible = true;
       q.state = 'flee'; q.fear = 8; q.threat = { x: -402, z: -245 };
     });
     simulate(game, 0.25, 0.25);
-    heli.x = -396; heli.z = -262; heli.y = 26;
-    heli.aim.set(-402, 0, -229);
+    heli.x = -399; heli.z = -268; heli.y = 17;
+    heli.aim.set(-404, 0, -232);
     heli.update(0, { x: p.x, z: p.z });
     for (const a of h) if (!a.dead) a.fig.aim = true;
     game.state.ammo.smg = 87;
@@ -217,11 +229,14 @@ const SCENES = {
     p.fireCooldown = 0;
     p.fire();
     game.step(STEP);
-    // the player swings the camera out to the right for a wider look at the street
-    for (let i = 0; i < 40; i += 1) game.cameraRig.update(STEP, { position: p.figure, aiming: false });
-    game.cameraRig.yaw = 0.34;
-    game.cameraRig.pitch = 0.16;
-    for (let i = 0; i < 40; i += 1) game.cameraRig.update(STEP, { position: p.figure, aiming: false });
+    // a wide over-the-shoulder look down the street (the rig's cinematic framing)
+    const back = 8.5, up = 3.4, right = 2.2;
+    game.cinematicOverride = {
+      position: new THREE.Vector3(p.x + 0.35 * back + right, up, p.z + back),
+      target: new THREE.Vector3(p.x - 1.2, 1.2, p.z - 16),
+      fov: 60, rate: 60,
+    };
+    game.cameraRig.initialised = false;
     game.dialogue.pin('celeste', 'Those are Kessane’s boys. Remind them whose street this is, mijo.', game.cast);
     game.showRadioOnFoot = false;
     game.cameraRig.shake = 0;
@@ -258,11 +273,11 @@ const SCENES = {
   },
 
   async causeway(game) {
-    setup(game, 19.45);
-    game.teleportPlayer(560, -296, Math.PI / 2);
+    setup(game, 18.05);
+    game.teleportPlayer(640, -296, Math.PI / 2);
     // keep the eastbound lane of the causeway clear for the run
     for (const v of game.vehicles.list.slice()) if (Math.abs(v.body.z + 300) < 14 && v.body.x > 540 && v.body.x < 900) game.vehicles.remove(v);
-    const bike = game.vehicles.spawn('bike', 600, -295, Math.PI / 2, { role: 'mission', paint: 0x00f5d4 });
+    const bike = game.vehicles.spawn('bike', 640, -295, Math.PI / 2, { role: 'mission', paint: 0x00f5d4 });
     bike.body.invulnerable = true;
     Object.assign(tuneOf(bike.body), { engine: 3, tyres: 2, armour: 0 });
     game.player.enterVehicle(bike, false);
@@ -307,12 +322,12 @@ const SCENES = {
       game.step(STEP);
     }
     pack.forEach((u, k) => { u.status = slots[k][3]; });
-    heli.x = pb.x - 30; heli.z = pb.z + 3; heli.y = 10; heli.heading = Math.PI / 2 - 0.9;
+    heli.x = pb.x - 38; heli.z = pb.z + 3; heli.y = 8.5; heli.heading = Math.PI / 2 - 0.9;
     heli.aim.set(pb.x - 1, 0, pb.z);
     heli.update(0, { x: pb.x, z: pb.z });
     game.player.seatRider(bike);
-    game.cameraRig.yaw = pb.heading + 0.4;
-    game.cameraRig.pitch = 0.02;
+    game.cameraRig.yaw = pb.heading + 0.75;
+    game.cameraRig.pitch = 0.2;
     game.cameraRig.orbitIdle = -10;
     for (let i = 0; i < 30; i += 1) game.cameraRig.update(STEP, { vehicle: bike, position: game.player.figure });
     game.dialogue.pin('dispatch', 'All units: motorcycle eastbound on the Halcyon Causeway. Close the island road!', game.cast);

@@ -5,6 +5,9 @@ import * as THREE from 'three';
 import { WEAPONS } from './weaponCatalog.js';
 import { damageFactor } from '../vehicles/vehicleTuning.js';
 
+const TRACER_LIFE = 0.1;
+const TRACER_LENGTH = 2.4;
+
 export class CombatSystem {
   constructor(game) {
     this.game = game;
@@ -78,7 +81,7 @@ export class CombatSystem {
       best = tt; hitVehicle = v; hitTarget = null;
     }
     const hx = ox + dx * best, hy = oy + dy * best, hz = oz + dz * best;
-    this.tracers.push({ ax: ox, ay: oy, az: oz, bx: hx, by: hy, bz: hz, life: 0.06 });
+    this.tracers.push({ ax: ox, ay: oy, az: oz, bx: hx, by: hy, bz: hz, life: TRACER_LIFE });
     if (hitTarget) {
       g.particles.blood(hx, hy, hz);
       hitTarget.takeHit(w.damage, shot.shooter, { x: dx, z: dz });
@@ -107,7 +110,7 @@ export class CombatSystem {
     }
   }
 
-  /** Bright streaks for recent shots: a hot head near the target fading to a dim tail. */
+  /** Short bright bolts that fly from the muzzle to the hit point over a few frames. */
   update(dt) {
     const glow = this.game.dynamicGlow;
     let n = 0;
@@ -116,12 +119,17 @@ export class CombatSystem {
       t.life -= dt;
       if (t.life <= 0) { this.tracers.splice(i, 1); continue; }
       if (n >= this.maxTracers) continue;
+      // a bolt passing right by the lens would draw as a long scratch across the frame
+      const cam = this.game.camera.position;
+      if (Math.hypot(t.bx - cam.x, t.bz - cam.z) < 7 || Math.hypot(t.ax - cam.x, t.az - cam.z) < 4) continue;
       const k = n * 6;
-      const tail = 0.35;
-      this.tracerPos.set([t.ax + (t.bx - t.ax) * tail, t.ay + (t.by - t.ay) * tail, t.az + (t.bz - t.az) * tail, t.bx, t.by, t.bz], k);
-      const a = Math.min(1, t.life / 0.06);
-      this.tracerCol.set([0.6 * a, 0.35 * a, 0.1 * a, 3 * a, 2.4 * a, 1.2 * a], k);
-      glow.push(t.bx, t.by, t.bz, 0xffc070, 0.9, 0, a);
+      const len = Math.hypot(t.bx - t.ax, t.by - t.ay, t.bz - t.az) || 1;
+      const head = Math.min(1, 0.25 + 0.75 * (1 - t.life / TRACER_LIFE));
+      const tail = Math.max(0, head - TRACER_LENGTH / len);
+      const at = (f) => [t.ax + (t.bx - t.ax) * f, t.ay + (t.by - t.ay) * f, t.az + (t.bz - t.az) * f];
+      this.tracerPos.set([...at(tail), ...at(head)], k);
+      this.tracerCol.set([0.5, 0.3, 0.08, 2.6, 2.1, 0.9], k);
+      if (head >= 1) glow.push(t.bx, t.by, t.bz, 0xffc070, 0.6, 0, 1);
       n += 1;
     }
     const geo = this.tracerLines.geometry;

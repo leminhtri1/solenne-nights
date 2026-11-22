@@ -10,15 +10,16 @@ uniform float scale; varying float vAlpha; varying vec3 vTint;
 void main() {
   vec4 mv = modelViewMatrix * vec4(position, 1.0);
   gl_Position = projectionMatrix * mv;
-  gl_PointSize = min(size * scale / max(-mv.z, 0.1), 500.0);
-  vAlpha = alpha; vTint = tint;
+  gl_PointSize = min(size * scale / max(-mv.z, 0.1), 160.0);
+  // anything right in front of the lens fades out rather than smearing the frame
+  vAlpha = alpha * smoothstep(2.5, 8.0, -mv.z); vTint = tint;
 }`;
 const FRAG = /* glsl */ `
 uniform sampler2D map; uniform float additive; varying float vAlpha; varying vec3 vTint;
 void main() {
   vec4 t = texture2D(map, gl_PointCoord);
   if (additive > 0.5) gl_FragColor = vec4(vTint * t.rgb * t.a * vAlpha, 1.0);
-  else gl_FragColor = vec4(vTint, t.a * vAlpha);
+  else gl_FragColor = vec4(vTint, t.a * vAlpha * 0.7);
 }`;
 
 class ParticleCloud {
@@ -124,28 +125,29 @@ export class ParticleEffects {
   }
 
   tyreSmoke(x, z) {
-    this.soft.emit(x + this.r(0.4), 0.4, z + this.r(0.4), this.r(1.2), 0.6 + this.rng() * 0.6, this.r(1.2), 0xe8e8ea, 1.4, 1.4 + this.rng() * 0.6, 3.4);
+    this.soft.emit(x + this.r(0.3), 0.3, z + this.r(0.3), this.r(1), 0.4 + this.rng() * 0.4, this.r(1), 0xd8d8dc, 0.7, 0.5 + this.rng() * 0.3, 1.6);
   }
 
   dust(x, z) {
-    this.soft.emit(x + this.r(0.4), 0.3, z + this.r(0.4), this.r(1), 0.6, this.r(1), 0xd9c7a0, 1.2, 1.2, 2.5);
+    this.soft.emit(x + this.r(0.4), 0.3, z + this.r(0.4), this.r(1), 0.5, this.r(1), 0xd9c7a0, 0.8, 0.7, 1.4);
   }
 
   fire(x, y, z) {
-    this.hot.emit(x + this.r(0.5), y, z + this.r(0.5), this.r(0.4), 2 + this.rng() * 2, this.r(0.4), this.rng() < 0.5 ? 0xff7a1a : 0xffc040, 1.8, 0.5 + this.rng() * 0.3, -1.5);
+    this.hot.emit(x + this.r(0.5), y, z + this.r(0.5), this.r(0.4), 2 + this.rng() * 2, this.r(0.4), this.rng() < 0.5 ? 0xff5a10 : 0xffa020, 1.1, 0.45 + this.rng() * 0.25, -1.2);
   }
 
   sparks(x, y, z, count = 14) {
     for (let i = 0; i < count; i += 1) {
-      this.hot.emit(x, y, z, this.r(7), 2 + this.rng() * 5, this.r(7), 0xffd27a, 0.35, 0.35 + this.rng() * 0.4, 0, 14);
+      this.hot.emit(x, y, z, this.r(7), 2 + this.rng() * 5, this.r(7), 0xffd27a, 0.18, 0.25 + this.rng() * 0.3, 0, 14);
     }
   }
 
   muzzle(x, y, z, dx, dz, big = false) {
-    this.hot.emit(x, y, z, dx * 2, 0, dz * 2, 0xffe0a0, big ? 2.6 : 1.8, 0.07, 0);
-    this.hot.emit(x + dx * 0.4, y, z + dz * 0.4, dx * 6, 0, dz * 6, 0xff9a30, big ? 1.6 : 1.1, 0.06, 0);
-    this.soft.emit(x, y, z, dx * 1.5 + this.r(0.3), 0.6, dz * 1.5 + this.r(0.3), 0xbbbbbb, 0.5, 0.6, 1.4);
-    this.flash(x, y, z, 0xffb060, big ? 7 : 4, 0.06, big ? 12 : 9);
+    // a small star-shaped flash: a hot core and a short tongue along the barrel
+    this.hot.emit(x, y, z, dx * 2, 0, dz * 2, 0xfff0c0, big ? 0.9 : 0.6, 0.05, 0);
+    this.hot.emit(x + dx * 0.35, y, z + dz * 0.35, dx * 6, 0, dz * 6, 0xffa040, big ? 0.6 : 0.4, 0.05, 0);
+    this.soft.emit(x, y, z, dx * 1.5 + this.r(0.3), 0.5, dz * 1.5 + this.r(0.3), 0xbbbbbb, 0.25, 0.35, 0.8);
+    this.flash(x, y, z, 0xffb060, big ? 4 : 2.5, 0.05, big ? 9 : 7);
   }
 
   impact(x, y, z) {
@@ -159,12 +161,12 @@ export class ParticleEffects {
 
   explosion(x, y, z) {
     for (let i = 0; i < 40; i += 1) {
-      this.hot.emit(x + this.r(1), y + this.r(1), z + this.r(1), this.r(10), this.rng() * 10, this.r(10), this.rng() < 0.5 ? 0xff8a20 : 0xffd060, 3 + this.rng() * 3, 0.5 + this.rng() * 0.5, 2, 4);
+      this.hot.emit(x + this.r(1), y + this.r(1), z + this.r(1), this.r(8), this.rng() * 8, this.r(8), this.rng() < 0.5 ? 0xff6a10 : 0xffb030, 1.6 + this.rng() * 1.6, 0.4 + this.rng() * 0.4, 1, 4);
     }
-    for (let i = 0; i < 30; i += 1) this.soft.emit(x + this.r(2), y + this.rng() * 2, z + this.r(2), this.r(4), 2 + this.rng() * 4, this.r(4), 0x2b2b2b, 3, 2.5 + this.rng() * 1.5, 3);
+    for (let i = 0; i < 18; i += 1) this.soft.emit(x + this.r(2), y + this.rng() * 2, z + this.r(2), this.r(3), 2 + this.rng() * 4, this.r(3), 0x2b2b2b, 1.8, 2 + this.rng() * 1.2, 1.6);
     this.sparks(x, y, z, 30);
-    this.flash(x, y + 2, z, 0xff9040, 120, 0.6, 45);
-    this.screenFlash = 0.35;
+    this.flash(x, y + 2, z, 0xff9040, 60, 0.5, 35);
+    this.screenFlash = 0.15;
   }
 
   splash(x, z) {

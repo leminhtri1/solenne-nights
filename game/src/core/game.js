@@ -397,8 +397,6 @@ export class Game {
     for (const glow of [this.staticGlow, this.dynamicGlow]) glow.sync(this.renderer, this.camera, this.sky.night, this.scene.fog);
     this.particles.sync(this.renderer, this.camera);
     this.post.composite.uniforms.flash.value = this.particles.screenFlash;
-    const pv = this.running ? this.player.vehicle : null;
-    this.post.setSpeed(pv ? ((pv.body.speed - 24) / 26) * (this.cameraRig.forwardness ?? 1) ** 2 : 0);
     this.post.render(this.scene, this.camera);
     if (this.running) {
       this.hud.update(dt);

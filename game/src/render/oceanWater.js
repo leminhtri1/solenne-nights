@@ -1,5 +1,6 @@
 // The bay: one large plane whose fragment shader sums travelling waves into a normal, mixes
-// deep and shallow blues by fresnel, reflects the sky's horizon, adds the sun's glitter path
+// deep and shallow blues by fresnel, reflects the sky (kept blue: the horizon only tints it),
+// adds the sun's glitter path
 // and fades into the scene fog. A low-poly vertex swell keeps the silhouette moving.
 import * as THREE from 'three';
 import { WATER_LEVEL } from '../world/cityLayout.js';
@@ -8,9 +9,10 @@ export class OceanWater {
   constructor(scene) {
     this.uniforms = {
       time: { value: 0 },
-      deepColor: { value: new THREE.Color(0x0a3d5c) },
-      shallowColor: { value: new THREE.Color(0x1aa6b7) },
+      deepColor: { value: new THREE.Color(0x0a4f86) },
+      shallowColor: { value: new THREE.Color(0x1fb4d2) },
       skyColor: { value: new THREE.Color(0xffb46a) },
+      skyTop: { value: new THREE.Color(0x2878dc) },
       sunColor: { value: new THREE.Color(0xffc080) },
       sunDir: { value: new THREE.Vector3(1, 0.2, 0) },
       fogColor: { value: new THREE.Color() },
@@ -36,6 +38,7 @@ export class OceanWater {
     const u = this.uniforms;
     u.time.value = time;
     u.skyColor.value.copy(sky.uniforms.horizonColor.value);
+    u.skyTop.value.copy(sky.uniforms.topColor.value);
     u.sunColor.value.copy(sky.uniforms.sunColor.value);
     u.sunDir.value.copy(sky.sunDir);
     u.night.value = sky.night;
@@ -63,7 +66,7 @@ void main() {
 }`;
 
 const FRAG = /* glsl */ `
-uniform float time; uniform vec3 deepColor; uniform vec3 shallowColor; uniform vec3 skyColor;
+uniform float time; uniform vec3 deepColor; uniform vec3 shallowColor; uniform vec3 skyColor; uniform vec3 skyTop;
 uniform vec3 sunColor; uniform vec3 sunDir; uniform vec3 fogColor; uniform float fogNear; uniform float fogFar;
 uniform float night;
 varying vec3 vWorld; varying float vDepth;
@@ -82,7 +85,8 @@ void main() {
   float fres = pow(1.0 - max(dot(n, viewDir), 0.0), 3.0);
   vec3 base = mix(deepColor, shallowColor, 0.35 + 0.25 * n.y);
   base *= mix(1.0, 0.25, night);
-  vec3 col = mix(base, skyColor * mix(1.0, 0.45, night), clamp(fres * 0.9 + 0.08, 0.0, 1.0));
+  vec3 skyRefl = mix(skyTop, skyColor, 0.3) * mix(1.0, 0.45, night);
+  vec3 col = mix(base, skyRefl, clamp(fres * 0.6 + 0.06, 0.0, 0.6));
   vec3 refl = reflect(-viewDir, n);
   float spec = pow(max(dot(refl, normalize(sunDir)), 0.0), 180.0);
   float glitter = pow(max(dot(refl, normalize(sunDir)), 0.0), 18.0) * 0.25;
@@ -90,7 +94,7 @@ void main() {
   // moonlight shimmer
   col += vec3(0.5, 0.6, 0.9) * pow(max(dot(refl, normalize(vec3(-0.4, 0.55, 0.6))), 0.0), 60.0) * night * 0.8;
   float fog = smoothstep(fogNear, fogFar, vDepth);
-  col = mix(col, fogColor, fog);
+  col = mix(col, fogColor, fog * 0.85);
   gl_FragColor = vec4(col, 1.0);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
