@@ -119,15 +119,15 @@ export class CombatSystem {
       t.life -= dt;
       if (t.life <= 0) { this.tracers.splice(i, 1); continue; }
       if (n >= this.maxTracers) continue;
-      // a bolt passing right by the lens would draw as a long scratch across the frame
-      const cam = this.game.camera.position;
-      if (Math.hypot(t.bx - cam.x, t.bz - cam.z) < 7 || Math.hypot(t.ax - cam.x, t.az - cam.z) < 4) continue;
       const k = n * 6;
       const len = Math.hypot(t.bx - t.ax, t.by - t.ay, t.bz - t.az) || 1;
       const head = Math.min(1, 0.25 + 0.75 * (1 - t.life / TRACER_LIFE));
       const tail = Math.max(0, head - TRACER_LENGTH / len);
       const at = (f) => [t.ax + (t.bx - t.ax) * f, t.ay + (t.by - t.ay) * f, t.az + (t.bz - t.az) * f];
-      this.tracerPos.set([...at(tail), ...at(head)], k);
+      const from = at(tail), to = at(head);
+      // a bolt passing right by the lens would draw as a long scratch across the frame
+      if (distanceToSegment(this.game.camera.position, from, to) < 6) continue;
+      this.tracerPos.set([...from, ...to], k);
       this.tracerCol.set([0.5, 0.3, 0.08, 2.6, 2.1, 0.9], k);
       if (head >= 1) glow.push(t.bx, t.by, t.bz, 0xffc070, 0.6, 0, 1);
       n += 1;
@@ -156,4 +156,12 @@ function rayCylinder(ox, oz, dx, dz, cx, cz, r) {
   const perp2 = fx * fx + fz * fz - along * along;
   if (perp2 > r * r) return null;
   return (along - Math.sqrt(r * r - perp2)) / len;
+}
+
+/** Distance from point p to the segment a-b (both [x, y, z]). */
+function distanceToSegment(p, a, b) {
+  const dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2];
+  const l2 = dx * dx + dy * dy + dz * dz || 1;
+  const f = Math.max(0, Math.min(1, ((p.x - a[0]) * dx + (p.y - a[1]) * dy + (p.z - a[2]) * dz) / l2));
+  return Math.hypot(a[0] + dx * f - p.x, a[1] + dy * f - p.y, a[2] + dz * f - p.z);
 }

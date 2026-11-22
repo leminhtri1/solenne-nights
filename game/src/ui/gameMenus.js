@@ -10,6 +10,7 @@ const CONTROLS = [
   ['Space', 'Handbrake'], ['Shift', 'Sprint'], ['RMB / LMB', 'Aim / fire'],
   ['1-4 · Wheel', 'Weapons'], ['R', 'Radio station'], ['E', 'Shop / interact'],
   ['T', 'Races · fares · jobs'], ['M', 'Map'], ['V', 'Camera view'], ['Esc', 'Pause'],
+  ['Z X C', 'Crew: jam · patch · decoy'],
 ];
 
 export class GameMenus {

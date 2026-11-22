@@ -139,3 +139,22 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #07060f; col
 #banner-title { font-size: 64px; font-weight: 900; letter-spacing: 6px; font-family: Impact, "Arial Black", sans-serif; color: var(--gold); text-shadow: 0 0 24px rgba(255, 160, 40, 0.8), 0 4px 0 #3a1500; }
 #banner-sub { font-size: 20px; font-weight: 800; letter-spacing: 3px; margin-top: 4px; text-shadow: 0 2px 6px #000; }
 #hit-vignette { position: absolute; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(255, 0, 40, 0.55)); transition: opacity 0.25s; }
+
+/* crew strip: compact cards under the weapon slots */
+.crew-cards { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; margin-top: 8px; }
+.crew-card { position: relative; width: 206px; height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 8px 0 4px; overflow: hidden; text-align: left;
+  border-radius: 9px; background: var(--panel); border: 1px solid var(--panel-edge); border-left: 3px solid #4fe0c0; }
+.crew-card img { width: 32px; height: 32px; border-radius: 7px; flex: none; }
+.crew-card .cc-text { display: flex; flex-direction: column; line-height: 1.12; flex: 1; min-width: 0; }
+.crew-card .cc-text b { font-size: 12px; font-weight: 900; letter-spacing: 0.6px; color: #fff; white-space: nowrap; }
+.crew-card .cc-text span { font-size: 10px; font-weight: 700; color: var(--dim); white-space: nowrap; }
+.crew-card kbd { flex: none; width: 20px; height: 20px; border-radius: 5px; background: #ffd166; color: #1a1020; font: 900 12px/20px system-ui, sans-serif; text-align: center; }
+.crew-card .cc-sweep { position: absolute; left: 0; bottom: 0; height: 3px; background: #ff4f8a; }
+.crew-card .cc-time { position: absolute; right: 6px; top: 9px; min-width: 24px; height: 20px; border-radius: 5px; font-style: normal; font: 900 10.5px/20px system-ui, sans-serif;
+  text-align: center; color: #ffb3c8; background: #241a36; display: none; }
+.crew-card:not([data-state="ready"]) .cc-time { display: block; }
+.crew-card[data-state="cooling"] { border-left-color: #ff4f8a; }
+.crew-card[data-state="cooling"] img, .crew-card[data-state="cooling"] kbd { filter: grayscale(0.7) brightness(0.7); }
+.crew-card[data-state="active"] { border-left-color: #7dffaf; box-shadow: 0 0 12px rgba(125, 255, 175, 0.5); }
+.crew-card[data-state="active"] .cc-time { color: #7dffaf; }
+.crew-card[data-state="locked"] { opacity: 0.45; border-left-color: #777; }

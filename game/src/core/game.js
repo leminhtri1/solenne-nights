@@ -31,6 +31,8 @@ import { TrafficAI } from '../ai/trafficAI.js';
 import { PoliceDispatch } from '../ai/policeDispatch.js';
 import { MissionRunner } from '../missions/missionRunner.js';
 import { SideActivities } from '../missions/sideActivities.js';
+import { CrewAbilities } from '../missions/crewAbilities.js';
+import { CrewCards } from '../ui/crewCards.js';
 import { CAST } from '../missions/castOfCharacters.js';
 import { HudOverlay } from '../ui/hudOverlay.js';
 import { DialogueBox } from '../ui/dialogueBox.js';
@@ -127,7 +129,9 @@ export class Game {
     this.dialogue = new DialogueBox(this);
     this.missions = new MissionRunner(this);
     this.activities = new SideActivities(this);
+    this.crew = new CrewAbilities(this);
     this.hud = new HudOverlay(this);
+    this.crewCards = new CrewCards(this);
     this.cityMap = paintCityMap(this.collision);
     this.hudMinimap = new Minimap(document.getElementById('minimap'), this, this.cityMap);
     this.mapScreen = new MapScreen(this, this.cityMap);
@@ -318,6 +322,7 @@ export class Game {
     if (!this.freezeClock) this.state.hour = (this.state.hour + dt / 60) % 24;
     this.roads.updateSignals(this.clock);
     this.player.update(dt);
+    this.crew.update(dt);
     if (this.autopilot) this.autopilot(dt);
     this.traffic.update(dt);
     this.police.update(dt);
@@ -404,6 +409,7 @@ export class Game {
     this.post.render(this.scene, this.camera);
     if (this.running) {
       this.hud.update(dt);
+      this.crewCards.update();
       this.hudMinimap.draw(dt);
     }
   }

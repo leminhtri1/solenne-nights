@@ -17,6 +17,14 @@ export const CAST = {
     name: 'Juno Vale', role: 'Night DJ on Radio Sal 99.1, trades in secrets',
     portrait: { bg: ['#3a0ca3', '#c38bff'], skin: '#8d5524', hair: '#ff6fb5', shirt: '#7b2cbf', hairStyle: 'long' },
   },
+  rafa: {
+    name: 'Rafa Quintero', role: 'Lookout, rooftop radio ham, hears every police band',
+    portrait: { bg: ['#004d40', '#26c6da'], skin: '#a86b3c', hair: '#0f0f0f', shirt: '#00897b', hairStyle: 'short' },
+  },
+  mara: {
+    name: 'Mara Solís', role: 'Getaway driver, never the same car twice',
+    portrait: { bg: ['#b71c1c', '#ff8a65'], skin: '#e0ac69', hair: '#2a1a12', shirt: '#d84315', hairStyle: 'long', shades: true },
+  },
   halloran: {
     name: 'Det. Ines Halloran', role: 'Solenne PD, for sale to the right buyer',
     portrait: { bg: ['#14213d', '#4a6fa5'], skin: '#ffdbac', hair: '#6b4423', shirt: '#14213d', hairStyle: 'long', badge: true },

@@ -162,6 +162,7 @@ const SCENES = {
     game.cameraRig.snapBehind(pb.heading);
     game.cameraRig.pitch = 0.12;
     for (let i = 0; i < 30; i += 1) game.cameraRig.update(STEP, { vehicle: v, position: game.player.figure });
+    game.crew.cooldowns.gizmo = 28; // Gizmo patched the Vireo a few blocks back
     game.dialogue.pin('juno', 'Cops on Ocean Parade! Stay on the gas, the causeway is two blocks up!', game.cast);
     game.audio.radio = { nowPlaying: { station: 'SOLAR FM 101.3', title: 'Causeway Lights', artist: 'VHS Lagoon', art: 'linear-gradient(135deg,#ff4fa3,#ffb347)' } };
     game.cameraRig.shake = 0;
@@ -194,11 +195,11 @@ const SCENES = {
     const wreck = game.vehicles.spawn('sedan', -409, -250, -0.5, { role: 'parked', paint: 0x2a2a30 });
     game.vehicles.explode(wreck);
     game.police.setWanted(2);
-    const u = addUnit(game, 'patrol', -392, -254, 0.35, 4);
+    const u = addUnit(game, 'patrol', -393.5, -241, -0.9, 2);
     u.status = 'ON FOOT';
     u.deployed = true;
     game.police.deployOfficers(u, 2);
-    addUnit(game, 'patrol', -410, -262, 0.05, 12);
+    addUnit(game, 'patrol', -411, -252, 0.5, 6);
     addUnit(game, 'patrol', -397, -285, 0, 14);
     game.peds.scare(-402, -225, 60, false);
     const p = game.player;
@@ -330,6 +331,7 @@ const SCENES = {
     game.cameraRig.pitch = 0.2;
     game.cameraRig.orbitIdle = -10;
     for (let i = 0; i < 30; i += 1) game.cameraRig.update(STEP, { vehicle: bike, position: game.player.figure });
+    game.crew.cooldowns.mara = 61;
     game.dialogue.pin('dispatch', 'All units: motorcycle eastbound on the Halcyon Causeway. Close the island road!', game.cast);
     game.audio.radio = { nowPlaying: { station: 'RADIO CALOR 94.7', title: 'Noche de Verano', artist: 'Santa Brisa', art: 'linear-gradient(135deg,#ff3b3b,#ffd166)' } };
     game.cameraRig.shake = 0;

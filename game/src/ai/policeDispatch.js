@@ -131,7 +131,8 @@ export class PoliceDispatch {
     this.sightTimer -= dt;
     if (this.sightTimer <= 0 && this.wanted > 0) {
       this.sightTimer = 0.25;
-      this.inSight = this.copCanSee(p.x, p.z, 110) || this.heli.canSee();
+      // Rafa's scanner jam leaves every unit blind for a few seconds
+      this.inSight = !g.crew?.jamming && (this.copCanSee(p.x, p.z, 110) || this.heli.canSee());
       if (this.inSight) { this.lastSeen = { x: p.x, z: p.z }; this.unseenTime = 0; }
     }
     if (this.wanted > 0) {
