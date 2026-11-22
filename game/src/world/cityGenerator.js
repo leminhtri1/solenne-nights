@@ -38,7 +38,7 @@ export class CityGenerator {
   }
 
   chunkBuilder(style, x, z) {
-    const key = `${style}:${Math.floor(x / CITY_TILE)}:${Math.floor(z / CITY_TILE)}`;
+    const key = `${style}:${Math.floor(x / (CITY_TILE * 2))}:${Math.floor(z / (CITY_TILE * 2))}`;
     if (!this.chunks.has(key)) this.chunks.set(key, { style, builder: new MeshBuilder() });
     return this.chunks.get(key).builder;
   }
@@ -350,12 +350,12 @@ export class CityGenerator {
       mesh.receiveShadow = true;
       group.add(mesh);
     }
-    group.add(this.base.buildTiles(new THREE.MeshStandardMaterial({ map: sidewalkTexture(), roughness: 0.9 }), { receiveShadow: true }));
+    group.add(this.base.buildTiles(new THREE.MeshStandardMaterial({ map: sidewalkTexture(), roughness: 0.9 }), { receiveShadow: true, cullDistance: 700 }));
     for (const [kind, builder] of Object.entries(this.lots)) {
       if (!builder.vertexCount) continue;
-      group.add(builder.buildTiles(new THREE.MeshStandardMaterial({ map: groundTexture(kind), roughness: 0.95 }), { receiveShadow: true }));
+      group.add(builder.buildTiles(new THREE.MeshStandardMaterial({ map: groundTexture(kind), roughness: 0.95 }), { receiveShadow: true, cullDistance: 450 }));
     }
-    group.add(this.detail.buildTiles(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75 }), { castShadow: true, receiveShadow: true }));
+    group.add(this.detail.buildTiles(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75 }), { castShadow: true, receiveShadow: true, cullDistance: 380 }));
     return group;
   }
 

@@ -9,6 +9,8 @@ import { VehicleBody, stepVehicle, collideVehicles } from './vehiclePhysics.js';
 import { glowTexture } from '../render/proceduralTextures.js';
 
 let nextId = 1;
+const DRAW_DISTANCE = 330;
+const SHADOW_DISTANCE = 80;
 
 export class VehicleManager {
   constructor(game) {
@@ -31,6 +33,7 @@ export class VehicleManager {
       beam.position.set(0, 0.08, def.length / 2 + 8);
       beam.renderOrder = 3;
       mesh.add(beam);
+      mesh.userData.beam = beam;
     }
     this.group.add(mesh);
     const v = {
@@ -146,10 +149,15 @@ export class VehicleManager {
   /** Light halos for every vehicle near the camera. */
   pushGlows(glow, camPos, night, clock) {
     this.beamMaterial.opacity = night * 0.2;
+    const beams = night > 0.05;
     for (const v of this.list) {
       const b = v.body;
-      if (v.dead) continue;
       const d2 = (b.x - camPos.x) ** 2 + (b.z - camPos.z) ** 2;
+      // distance culling: far cars are not drawn, and only nearby ones cast shadows
+      v.mesh.visible = d2 < DRAW_DISTANCE * DRAW_DISTANCE;
+      v.mesh.userData.body.castShadow = d2 < SHADOW_DISTANCE * SHADOW_DISTANCE;
+      if (v.mesh.userData.beam) v.mesh.userData.beam.visible = beams && d2 < 120 * 120;
+      if (v.dead) continue;
       if (d2 > 260 * 260) continue;
       const s = Math.sin(b.heading), c = Math.cos(b.heading);
       const half = v.def.length / 2;

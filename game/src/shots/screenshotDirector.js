@@ -322,7 +322,7 @@ const SCENES = {
       game.step(STEP);
     }
     pack.forEach((u, k) => { u.status = slots[k][3]; });
-    heli.x = pb.x - 38; heli.z = pb.z + 3; heli.y = 8.5; heli.heading = Math.PI / 2 - 0.9;
+    heli.x = pb.x - 36; heli.z = pb.z + 22; heli.y = 8; heli.heading = Math.PI / 2 - 0.9;
     heli.aim.set(pb.x - 1, 0, pb.z);
     heli.update(0, { x: pb.x, z: pb.z });
     game.player.seatRider(bike);

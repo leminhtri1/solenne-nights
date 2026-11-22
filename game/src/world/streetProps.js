@@ -132,16 +132,16 @@ export class StreetProps {
   /** Turn everything collected into meshes. Returns the group plus materials that react to night. */
   build() {
     const group = new THREE.Group();
-    const trunk = this.trunks.buildTiles(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 }), { castShadow: true });
+    const trunk = this.trunks.buildTiles(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 }), { castShadow: true, cullDistance: 650 });
     const leafMat = new THREE.MeshStandardMaterial({
       map: palmLeafTexture(), vertexColors: true, alphaTest: 0.45, side: THREE.DoubleSide, roughness: 0.9,
     });
-    const leaves = this.leaves.buildTiles(leafMat, { castShadow: true });
-    const posts = this.posts.buildTiles(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55, metalness: 0.4 }), { castShadow: true });
+    const leaves = this.leaves.buildTiles(leafMat, { castShadow: true, cullDistance: 650 });
+    const posts = this.posts.buildTiles(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.55, metalness: 0.4 }), { castShadow: true, cullDistance: 320 });
     this.poolMaterial = new THREE.MeshBasicMaterial({
       map: glowTexture(), vertexColors: true, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false,
     });
-    const pools = this.pools.buildTiles(this.poolMaterial);
+    const pools = this.pools.buildTiles(this.poolMaterial, { cullDistance: 320 });
     for (const m of pools.children) m.renderOrder = 2;
     group.add(trunk, leaves, posts, pools);
 
@@ -151,6 +151,7 @@ export class StreetProps {
       mesh.scale.set(b.width, b.h, 1);
       mesh.position.set(b.x, b.y, b.z);
       mesh.rotation.y = b.yaw;
+      mesh.userData.cullDistance = 520;
       group.add(mesh);
       (this.billboardMaterials ||= []).push(mesh.material);
     }
@@ -159,6 +160,7 @@ export class StreetProps {
       mesh.scale.set(s.width, s.width / 4, 1);
       mesh.position.set(s.x + Math.sin(s.yaw) * 0.4, s.y, s.z + Math.cos(s.yaw) * 0.4);
       mesh.rotation.y = s.yaw;
+      mesh.userData.cullDistance = 280;
       group.add(mesh);
       (this.neonMaterials ||= []).push(mesh.material);
     }
@@ -170,6 +172,7 @@ export class StreetProps {
         mesh.scale.set(s.length, s.length / 4, 1);
         mesh.position.set(s.x + Math.sin(s.yaw) * 1.4, s.y, s.z + Math.cos(s.yaw) * 1.4);
         mesh.rotation.set(0, s.yaw + Math.PI / 2 + flip, Math.PI / 2, 'YXZ');
+        mesh.userData.cullDistance = 240;
         group.add(mesh);
       }
       (this.neonMaterials ||= []).push(material);

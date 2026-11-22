@@ -1,7 +1,8 @@
 // Low-poly vehicle meshes. A car body is a side profile extruded across its width; the
 // greenhouse glass is a slightly wider inset profile; bumpers, grilles, mirrors, lamps and
-// wheels are boxes and cylinders. Geometry is built once per body type and shared; each car
-// only owns its paint material.
+// wheels are boxes and cylinders. Geometry is built once per body type and shared: body, glass,
+// trim, livery and wheels are one merged mesh whose `paintMask` vertices take the car's own paint
+// colour, so a car costs two draw calls (solid and lamps). Each car only owns its paint material.
 import * as THREE from 'three';
 import { MeshBuilder } from '../render/meshBuilder.js';
 
@@ -152,9 +153,50 @@ export function vehicleGeometry(def) {
     if (def.body === 'sports') trim.addBox(0, 1.0, rear + 0.2, W * 0.9, 0.06, 0.35, 0x111111); // spoiler
     addWheels(wheels, def, def.body === 'van' ? 0.42 : 0.38);
   }
-  const set = { paint: paint.build(), trim: trim.build(), lights: lights.build(), wheels: wheels.build() };
+  if (def.police && def.body === 'police') {
+    // dark doors and bonnet panel for the black-and-white livery
+    trim.addBox(0, 0.62, -0.1, def.width + 0.03, 0.42, 2.0, 0x0b1d3a);
+  }
+  const set = { solid: mergeWithMask([[paint, 1], [trim, 0], [wheels, 0]]), lights: lights.build() };
   cache.set(key, set);
   return set;
+}
+
+/** Merge builders into one geometry with a per-vertex paint mask (1 = takes the paint colour). */
+function mergeWithMask(parts) {
+  const geos = parts.map(([b]) => b.build());
+  const total = geos.reduce((n, g) => n + g.attributes.position.count, 0);
+  const out = new THREE.BufferGeometry();
+  for (const [name, size] of [['position', 3], ['normal', 3], ['uv', 2], ['color', 3]]) {
+    const arr = new Float32Array(total * size);
+    let at = 0;
+    for (const g of geos) { arr.set(g.attributes[name].array, at); at += g.attributes[name].array.length; }
+    out.setAttribute(name, new THREE.BufferAttribute(arr, size));
+  }
+  const mask = new Float32Array(total);
+  let at = 0;
+  geos.forEach((g, i) => { mask.fill(parts[i][1], at, at + g.attributes.position.count); at += g.attributes.position.count; });
+  out.setAttribute('paintMask', new THREE.BufferAttribute(mask, 1));
+  out.computeBoundingSphere();
+  for (const g of geos) g.dispose();
+  return out;
+}
+
+/** Paint material: masked vertices are tinted by `color` and glossy, the rest keep their own colour. */
+function paintMaterial(paintColor) {
+  const m = new THREE.MeshStandardMaterial({ color: paintColor, vertexColors: true, roughness: 0.28, metalness: 0.5, envMapIntensity: 1.1 });
+  m.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute float paintMask;\nvarying float vPaintMask;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvPaintMask = paintMask;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying float vPaintMask;')
+      .replace('vec4 diffuseColor = vec4( diffuse, opacity );', 'vec4 diffuseColor = vec4( mix( vec3( 1.0 ), diffuse, vPaintMask ), opacity );')
+      .replace('float roughnessFactor = roughness;', 'float roughnessFactor = mix( 0.38, roughness, vPaintMask );')
+      .replace('float metalnessFactor = metalness;', 'float metalnessFactor = mix( 0.35, metalness, vPaintMask );');
+  };
+  m.customProgramCacheKey = () => 'vehicle-paint';
+  return m;
 }
 
 const shared = {};
@@ -173,19 +215,12 @@ export function createVehicleMesh(def, paintColor) {
   const geo = vehicleGeometry(def);
   const mats = sharedMaterials();
   const group = new THREE.Group();
-  const paintMat = new THREE.MeshStandardMaterial({ color: paintColor, roughness: 0.28, metalness: 0.55, envMapIntensity: 1.2 });
-  const body = new THREE.Mesh(geo.paint, paintMat);
-  const trim = new THREE.Mesh(geo.trim, mats.trim);
+  const paintMat = paintMaterial(paintColor);
+  const body = new THREE.Mesh(geo.solid, paintMat);
   const lights = new THREE.Mesh(geo.lights, mats.lights);
-  const wheels = new THREE.Mesh(geo.wheels, mats.wheels);
-  body.castShadow = trim.castShadow = wheels.castShadow = true;
-  group.add(body, trim, lights, wheels);
-  if (def.police && def.body === 'police') {
-    // dark doors and bonnet panel for the black-and-white livery
-    const decal = new THREE.Mesh(new THREE.BoxGeometry(def.width + 0.03, 0.42, 2.0), mats.policeDecal);
-    decal.position.set(0, 0.62, -0.1);
-    group.add(decal);
-  }
+  body.castShadow = true;
+  group.add(body, lights);
   group.userData.paint = paintMat;
+  group.userData.body = body;
   return group;
 }

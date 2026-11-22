@@ -64,7 +64,7 @@ export class SidewalkClutter {
         });
       }
     }
-    return this.b.buildTiles(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7, metalness: 0.1 }), { castShadow: true, receiveShadow: true });
+    return this.b.buildTiles(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7, metalness: 0.1 }), { castShadow: true, receiveShadow: true, cullDistance: 300 });
   }
 
   place(kind, x, z, yaw) {

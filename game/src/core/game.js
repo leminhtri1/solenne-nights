@@ -14,6 +14,7 @@ import { GlowPoints } from '../render/glowPoints.js';
 import { PostEffects } from '../render/postEffects.js';
 import { ParticleEffects } from '../render/particleEffects.js';
 import { CameraRig } from '../render/cameraRig.js';
+import { DistanceCuller } from '../render/distanceCuller.js';
 import { CollisionGrid } from '../world/collisionGrid.js';
 import { RoadNetwork } from '../world/roadNetwork.js';
 import { StreetProps } from '../world/streetProps.js';
@@ -107,6 +108,8 @@ export class Game {
     this.clutter = new SidewalkClutter({ glow: this.staticGlow, rng: createRandom(this.seed + 23) });
     this.scene.add(this.clutter.build());
     this.staticGlow.commit();
+    this.culler = new DistanceCuller();
+    this.culler.collect(this.scene);
     this.pmrem = new THREE.PMREMGenerator(this.renderer);
     this.envHour = -10;
   }
@@ -384,6 +387,7 @@ export class Game {
     }
     const focus = this.running ? { x: this.player.x, z: this.player.z } : { x: 250, z: -250 };
     this.sky.follow(focus, this.camera, this.clock);
+    this.culler.update(this.camera);
     this.water.update(this.clock, this.sky, this.scene.fog);
     this.dynamicGlow.clear();
     this.vehicles.pushGlows(this.dynamicGlow, this.camera.position, this.sky.night, this.clock);

@@ -106,7 +106,7 @@ export class MeshBuilder {
   }
 
   /** One mesh per tile (plus one for untiled shapes), sharing `material`. */
-  buildTiles(material, { castShadow = false, receiveShadow = false } = {}) {
+  buildTiles(material, { castShadow = false, receiveShadow = false, cullDistance = 0 } = {}) {
     const group = new THREE.Group();
     for (const b of [this.whole, ...this.buckets.values()]) {
       if (!b.pos.length) continue;
@@ -114,6 +114,7 @@ export class MeshBuilder {
       mesh.castShadow = castShadow;
       mesh.receiveShadow = receiveShadow;
       mesh.matrixAutoUpdate = false;
+      if (cullDistance) mesh.userData.cullDistance = cullDistance;
       group.add(mesh);
     }
     return group;
